@@ -1,0 +1,2221 @@
+{
+  "mode": "offline-rules",
+  "summary": {
+    "total": 24,
+    "schema_pass": 24,
+    "schema_pass_rate": 1.0,
+    "evidence_present": 19,
+    "evidence_present_rate": 0.7917,
+    "requirement_coverage": 1.0,
+    "no_evidence_guard": 5,
+    "high_risk_review": 24,
+    "failures": []
+  },
+  "outputs": [
+    {
+      "case_id": "case-001",
+      "executive_summary": "针对制造业设备维修知识问答，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "制造业",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "设备维修知识问答",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "私有化",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 5",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "完整答案 10 秒内",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "PDF、维修手册",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "数据不能出域",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。",
+        "私有化场景优先评估本地推理服务、数据隔离和运维成本。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1877
+        },
+        {
+          "evidence_id": "KB-004",
+          "title": "检索与答案可信度",
+          "excerpt": "评测至少包括需求字段完整率、证据引用率、无证据拒答准确率、结构化输出通过率、首 Token 延迟、完整答案延迟和估算 Token 成本。任何指标都必须以实际运行结果为准。",
+          "source_path": "data/knowledge/retrieval-and-grounding.md",
+          "relevance": 0.1373
+        },
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "工作流可以依次完成需求提取、知识检索、结构化输出、条件分支和结果展示。对于客户的部署方式、数据出域、并发量、延迟和合规要求，应在生成方案前完成结构化校验。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1319
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-002",
+      "executive_summary": "针对金融内部制度检索，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "金融",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "内部制度检索",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "内网",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 20",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "首 Token 2 秒内",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "DOCX、制度文档",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "审计日志、权限隔离",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。",
+        "私有化场景优先评估本地推理服务、数据隔离和运维成本。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "并发量应区分平均并发和峰值并发，延迟应区分首 Token 延迟和完整答案延迟。合规需求应明确数据驻留、个人信息、日志留存、加密、访问控制和供应商审计边界。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1505
+        },
+        {
+          "evidence_id": "KB-004",
+          "title": "检索与答案可信度",
+          "excerpt": "评测至少包括需求字段完整率、证据引用率、无证据拒答准确率、结构化输出通过率、首 Token 延迟、完整答案延迟和估算 Token 成本。任何指标都必须以实际运行结果为准。",
+          "source_path": "data/knowledge/retrieval-and-grounding.md",
+          "relevance": 0.1365
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-003",
+      "executive_summary": "针对零售门店运营方案生成，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "零售",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "门店运营方案生成",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "公有云 API",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "日请求 500 次",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "Excel、Markdown",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [],
+      "clarifying_questions": [
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "平台可以连接云端模型、OpenAI-compatible API 和自托管推理服务。应用 API 由服务端调用，浏览器端不得直接携带模型或应用密钥。返回结果建议使用 JSON Schema 约束，便于接入 CRM、工单和售前方案模板。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1444
+        },
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.114
+        }
+      ],
+      "review_status": "not_required",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-004",
+      "executive_summary": "针对医疗器械产品资料问答，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "医疗器械",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "产品资料问答",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "私有化",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "PDF、图片",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "敏感数据、访问控制",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。",
+        "私有化场景优先评估本地推理服务、数据隔离和运维成本。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "性能容量",
+          "description": "缺少并发量，无法承诺吞吐和容量",
+          "severity": "medium",
+          "action": "补充峰值并发和日请求量"
+        },
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [
+        "峰值并发、日请求量和上下文长度分别是多少？",
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1488
+        },
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "本资料是作品集使用的合成产品资料，不代表任何真实厂商的商业承诺。演示系统只允许基于本资料输出能力匹配，不允许把未出现的价格、SLA 或认证当作事实。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1324
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-005",
+      "executive_summary": "资料不足：当前资料库没有足够证据支持具体产品承诺，建议先补充资料和澄清需求。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "物流",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "投标文件方案辅助",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "DOCX、PPTX、表格",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [],
+      "architecture": [],
+      "implementation_steps": [],
+      "risks": [
+        {
+          "category": "部署边界",
+          "description": "尚未确认公有云、私有化或内网部署",
+          "severity": "high",
+          "action": "确认数据是否允许出域"
+        },
+        {
+          "category": "性能容量",
+          "description": "缺少并发量，无法承诺吞吐和容量",
+          "severity": "medium",
+          "action": "补充峰值并发和日请求量"
+        },
+        {
+          "category": "知识覆盖",
+          "description": "资料库未召回相关证据",
+          "severity": "high",
+          "action": "补充产品资料或拒绝给出具体结论"
+        }
+      ],
+      "clarifying_questions": [
+        "数据是否允许发送到公有云 API？是否必须部署在客户内网？",
+        "峰值并发、日请求量和上下文长度分别是多少？",
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？",
+        "是否有现有产品白皮书、接口文档或安全规范可纳入知识库？"
+      ],
+      "evidence": [],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-006",
+      "executive_summary": "针对能源运维规程检索，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "能源",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "运维规程检索",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "内网",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 8",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "首 Token 3 秒内",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "PDF、扫描件",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "数据不能出域、审计日志",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。",
+        "私有化场景优先评估本地推理服务、数据隔离和运维成本。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.2182
+        },
+        {
+          "evidence_id": "KB-002",
+          "title": "本地推理服务选型资料",
+          "excerpt": "性能报告至少记录模型版本、量化等级、上下文长度、硬件、Metal/CPU 设置、首 Token 延迟、生成速度、并发数、p95 延迟和内存占用。单机演示数据不能直接等同于生产容量承诺。",
+          "source_path": "data/knowledge/inference-deployment.md",
+          "relevance": 0.1834
+        },
+        {
+          "evidence_id": "KB-004",
+          "title": "检索与答案可信度",
+          "excerpt": "评测至少包括需求字段完整率、证据引用率、无证据拒答准确率、结构化输出通过率、首 Token 延迟、完整答案延迟和估算 Token 成本。任何指标都必须以实际运行结果为准。",
+          "source_path": "data/knowledge/retrieval-and-grounding.md",
+          "relevance": 0.1455
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-007",
+      "executive_summary": "针对教育课程顾问方案生成，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "教育",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "课程顾问方案生成",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "公有云 API",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "日请求 1000 次",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "完整答案 15 秒内",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "Markdown、案例库",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "个人信息脱敏",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "并发量应区分平均并发和峰值并发，延迟应区分首 Token 延迟和完整答案延迟。合规需求应明确数据驻留、个人信息、日志留存、加密、访问控制和供应商审计边界。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1697
+        },
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "工作流可以依次完成需求提取、知识检索、结构化输出、条件分支和结果展示。对于客户的部署方式、数据出域、并发量、延迟和合规要求，应在生成方案前完成结构化校验。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1478
+        },
+        {
+          "evidence_id": "KB-004",
+          "title": "检索与答案可信度",
+          "excerpt": "评测至少包括需求字段完整率、证据引用率、无证据拒答准确率、结构化输出通过率、首 Token 延迟、完整答案延迟和估算 Token 成本。任何指标都必须以实际运行结果为准。",
+          "source_path": "data/knowledge/retrieval-and-grounding.md",
+          "relevance": 0.1312
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-008",
+      "executive_summary": "针对软件服务API 产品选型，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "软件服务",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "API 产品选型",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "公有云 API",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 10",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "首 Token 2 秒内",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "API 文档、Markdown",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [],
+      "clarifying_questions": [],
+      "evidence": [
+        {
+          "evidence_id": "KB-002",
+          "title": "本地推理服务选型资料",
+          "excerpt": "本地模型服务适合数据不能出域、网络不稳定、边缘设备或需要固定模型版本的场景。云端 API 适合快速上线、模型能力要求高或请求量弹性变化的场景。两者可以通过 OpenAI-compatible API 统一上层调用方式。",
+          "source_path": "data/knowledge/inference-deployment.md",
+          "relevance": 0.2006
+        },
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1987
+        },
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "平台可以连接云端模型、OpenAI-compatible API 和自托管推理服务。应用 API 由服务端调用，浏览器端不得直接携带模型或应用密钥。返回结果建议使用 JSON Schema 约束，便于接入 CRM、工单和售前方案模板。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1633
+        }
+      ],
+      "review_status": "not_required",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-009",
+      "executive_summary": "资料不足：当前资料库没有足够证据支持具体产品承诺，建议先补充资料和澄清需求。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "制造业",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "跨文档故障分析",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 3",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "PDF、日志、表格",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [],
+      "architecture": [],
+      "implementation_steps": [],
+      "risks": [
+        {
+          "category": "部署边界",
+          "description": "尚未确认公有云、私有化或内网部署",
+          "severity": "high",
+          "action": "确认数据是否允许出域"
+        },
+        {
+          "category": "知识覆盖",
+          "description": "资料库未召回相关证据",
+          "severity": "high",
+          "action": "补充产品资料或拒绝给出具体结论"
+        }
+      ],
+      "clarifying_questions": [
+        "数据是否允许发送到公有云 API？是否必须部署在客户内网？",
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？",
+        "是否有现有产品白皮书、接口文档或安全规范可纳入知识库？"
+      ],
+      "evidence": [],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-010",
+      "executive_summary": "针对政务政策文件问答，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "政务",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "政策文件问答",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "私有化",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 30",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "完整答案 8 秒内",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "PDF、网页",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "数据不能出域、国产化适配",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。",
+        "私有化场景优先评估本地推理服务、数据隔离和运维成本。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.2023
+        },
+        {
+          "evidence_id": "KB-002",
+          "title": "本地推理服务选型资料",
+          "excerpt": "量化通常可以降低模型文件大小和内存占用，并可能提高推理速度，但不同量化等级会在输出质量、速度和资源占用之间产生取舍。Q4、Q5、Q8 的差异必须通过目标任务和目标硬件实测，不能只根据文件大小判断。",
+          "source_path": "data/knowledge/inference-deployment.md",
+          "relevance": 0.19
+        },
+        {
+          "evidence_id": "KB-004",
+          "title": "检索与答案可信度",
+          "excerpt": "评测至少包括需求字段完整率、证据引用率、无证据拒答准确率、结构化输出通过率、首 Token 延迟、完整答案延迟和估算 Token 成本。任何指标都必须以实际运行结果为准。",
+          "source_path": "data/knowledge/retrieval-and-grounding.md",
+          "relevance": 0.1359
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-011",
+      "executive_summary": "针对互联网售前知识检索，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "互联网",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "售前知识检索",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "公有云 API",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 50",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "首 Token 1 秒内",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "Wiki、PDF",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "权限隔离",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "知识库应按租户或项目隔离，并设置文档访问权限。敏感资料不应写入公开日志或提交到 GitHub。API Key 只能保存在服务端环境变量或密钥管理系统中。需要记录请求审计、模型版本、知识库版本和人工审核结果。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1551
+        },
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "平台可以连接云端模型、OpenAI-compatible API 和自托管推理服务。应用 API 由服务端调用，浏览器端不得直接携带模型或应用密钥。返回结果建议使用 JSON Schema 约束，便于接入 CRM、工单和售前方案模板。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1236
+        },
+        {
+          "evidence_id": "KB-004",
+          "title": "检索与答案可信度",
+          "excerpt": "评测至少包括需求字段完整率、证据引用率、无证据拒答准确率、结构化输出通过率、首 Token 延迟、完整答案延迟和估算 Token 成本。任何指标都必须以实际运行结果为准。",
+          "source_path": "data/knowledge/retrieval-and-grounding.md",
+          "relevance": 0.1225
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-012",
+      "executive_summary": "针对建筑项目规范问答，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "建筑",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "项目规范问答",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "内网",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 6",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "PDF、CAD 说明",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "数据不能出域",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。",
+        "私有化场景优先评估本地推理服务、数据隔离和运维成本。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1485
+        },
+        {
+          "evidence_id": "KB-002",
+          "title": "本地推理服务选型资料",
+          "excerpt": "本地模型服务适合数据不能出域、网络不稳定、边缘设备或需要固定模型版本的场景。云端 API 适合快速上线、模型能力要求高或请求量弹性变化的场景。两者可以通过 OpenAI-compatible API 统一上层调用方式。",
+          "source_path": "data/knowledge/inference-deployment.md",
+          "relevance": 0.1271
+        },
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "平台支持将 PDF、DOCX、PPTX、表格和 Markdown 等资料纳入知识库，通过切分、向量检索、关键词召回和重排序为大模型提供上下文。回答应保留来源片段，无法召回证据时返回“资料不足”，并提出澄清问题。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1023
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-013",
+      "executive_summary": "针对金融客户经理话术辅助，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "金融",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "客户经理话术辅助",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "公有云 API",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "日请求 300 次",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "产品手册、FAQ",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "个人信息脱敏",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.179
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-014",
+      "executive_summary": "针对医药研发资料检索，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "医药",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "研发资料检索",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "私有化",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "PDF、实验记录",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "数据不能出域、访问控制",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。",
+        "私有化场景优先评估本地推理服务、数据隔离和运维成本。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "性能容量",
+          "description": "缺少并发量，无法承诺吞吐和容量",
+          "severity": "medium",
+          "action": "补充峰值并发和日请求量"
+        },
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [
+        "峰值并发、日请求量和上下文长度分别是多少？",
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1937
+        },
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "本资料是作品集使用的合成产品资料，不代表任何真实厂商的商业承诺。演示系统只允许基于本资料输出能力匹配，不允许把未出现的价格、SLA 或认证当作事实。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1796
+        },
+        {
+          "evidence_id": "KB-002",
+          "title": "本地推理服务选型资料",
+          "excerpt": "本地模型服务适合数据不能出域、网络不稳定、边缘设备或需要固定模型版本的场景。云端 API 适合快速上线、模型能力要求高或请求量弹性变化的场景。两者可以通过 OpenAI-compatible API 统一上层调用方式。",
+          "source_path": "data/knowledge/inference-deployment.md",
+          "relevance": 0.1362
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-015",
+      "executive_summary": "资料不足：当前资料库没有足够证据支持具体产品承诺，建议先补充资料和澄清需求。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "汽车",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "售后服务知识助手",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 12",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "完整答案 12 秒内",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "维修手册、图片、视频说明",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [],
+      "architecture": [],
+      "implementation_steps": [],
+      "risks": [
+        {
+          "category": "部署边界",
+          "description": "尚未确认公有云、私有化或内网部署",
+          "severity": "high",
+          "action": "确认数据是否允许出域"
+        },
+        {
+          "category": "知识覆盖",
+          "description": "资料库未召回相关证据",
+          "severity": "high",
+          "action": "补充产品资料或拒绝给出具体结论"
+        }
+      ],
+      "clarifying_questions": [
+        "数据是否允许发送到公有云 API？是否必须部署在客户内网？",
+        "是否有现有产品白皮书、接口文档或安全规范可纳入知识库？"
+      ],
+      "evidence": [],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-016",
+      "executive_summary": "针对电商商品运营分析，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "电商",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "商品运营分析",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "公有云 API",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 15",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "首 Token 3 秒内",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "CSV、商品文案",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [],
+      "clarifying_questions": [],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "并发量应区分平均并发和峰值并发，延迟应区分首 Token 延迟和完整答案延迟。合规需求应明确数据驻留、个人信息、日志留存、加密、访问控制和供应商审计边界。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1367
+        }
+      ],
+      "review_status": "not_required",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-017",
+      "executive_summary": "针对通信网络故障方案辅助，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "通信",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "网络故障方案辅助",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "内网",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 10",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "日志、工单、网络规范",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "数据不能出域、审计日志",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。",
+        "私有化场景优先评估本地推理服务、数据隔离和运维成本。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1705
+        },
+        {
+          "evidence_id": "KB-002",
+          "title": "本地推理服务选型资料",
+          "excerpt": "本地模型服务适合数据不能出域、网络不稳定、边缘设备或需要固定模型版本的场景。云端 API 适合快速上线、模型能力要求高或请求量弹性变化的场景。两者可以通过 OpenAI-compatible API 统一上层调用方式。",
+          "source_path": "data/knowledge/inference-deployment.md",
+          "relevance": 0.1204
+        },
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "工作流可以依次完成需求提取、知识检索、结构化输出、条件分支和结果展示。对于客户的部署方式、数据出域、并发量、延迟和合规要求，应在生成方案前完成结构化校验。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1158
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-018",
+      "executive_summary": "针对人力资源制度与流程咨询，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "人力资源",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "制度与流程咨询",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "公有云 API",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "日请求 200 次",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "DOCX、流程图",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "个人信息脱敏",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1594
+        },
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "平台可以连接云端模型、OpenAI-compatible API 和自托管推理服务。应用 API 由服务端调用，浏览器端不得直接携带模型或应用密钥。返回结果建议使用 JSON Schema 约束，便于接入 CRM、工单和售前方案模板。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1041
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-019",
+      "executive_summary": "资料不足：当前资料库没有足够证据支持具体产品承诺，建议先补充资料和澄清需求。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "农业",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "农技资料问答",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "PDF、图片",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [],
+      "architecture": [],
+      "implementation_steps": [],
+      "risks": [
+        {
+          "category": "部署边界",
+          "description": "尚未确认公有云、私有化或内网部署",
+          "severity": "high",
+          "action": "确认数据是否允许出域"
+        },
+        {
+          "category": "性能容量",
+          "description": "缺少并发量，无法承诺吞吐和容量",
+          "severity": "medium",
+          "action": "补充峰值并发和日请求量"
+        },
+        {
+          "category": "知识覆盖",
+          "description": "资料库未召回相关证据",
+          "severity": "high",
+          "action": "补充产品资料或拒绝给出具体结论"
+        }
+      ],
+      "clarifying_questions": [
+        "数据是否允许发送到公有云 API？是否必须部署在客户内网？",
+        "峰值并发、日请求量和上下文长度分别是多少？",
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？",
+        "是否有现有产品白皮书、接口文档或安全规范可纳入知识库？"
+      ],
+      "evidence": [],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-020",
+      "executive_summary": "针对航空运行规章检索，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "航空",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "运行规章检索",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "私有化",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 4",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "完整答案 5 秒内",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "PDF、扫描件",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "数据不能出域、审计日志、访问控制",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。",
+        "私有化场景优先评估本地推理服务、数据隔离和运维成本。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.2375
+        },
+        {
+          "evidence_id": "KB-004",
+          "title": "检索与答案可信度",
+          "excerpt": "评测至少包括需求字段完整率、证据引用率、无证据拒答准确率、结构化输出通过率、首 Token 延迟、完整答案延迟和估算 Token 成本。任何指标都必须以实际运行结果为准。",
+          "source_path": "data/knowledge/retrieval-and-grounding.md",
+          "relevance": 0.159
+        },
+        {
+          "evidence_id": "KB-002",
+          "title": "本地推理服务选型资料",
+          "excerpt": "量化通常可以降低模型文件大小和内存占用，并可能提高推理速度，但不同量化等级会在输出质量、速度和资源占用之间产生取舍。Q4、Q5、Q8 的差异必须通过目标任务和目标硬件实测，不能只根据文件大小判断。",
+          "source_path": "data/knowledge/inference-deployment.md",
+          "relevance": 0.1315
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-021",
+      "executive_summary": "针对传媒内容选题方案生成，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "传媒",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "内容选题方案生成",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "公有云 API",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "日请求 100 次",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "文章、案例库",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [],
+      "clarifying_questions": [
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "工作流可以依次完成需求提取、知识检索、结构化输出、条件分支和结果展示。对于客户的部署方式、数据出域、并发量、延迟和合规要求，应在生成方案前完成结构化校验。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1449
+        },
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1345
+        },
+        {
+          "evidence_id": "KB-004",
+          "title": "检索与答案可信度",
+          "excerpt": "生成提示词必须要求模型只使用检索上下文。系统应把事实性结论和方案建议分开；没有证据的结论必须改写为未知、风险或待确认问题。对价格、SLA、认证和安全承诺设置人工审核门槛。",
+          "source_path": "data/knowledge/retrieval-and-grounding.md",
+          "relevance": 0.1022
+        }
+      ],
+      "review_status": "not_required",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-022",
+      "executive_summary": "资料不足：当前资料库没有足够证据支持具体产品承诺，建议先补充资料和澄清需求。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "未知",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "不明用途的智能问答",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [],
+      "architecture": [],
+      "implementation_steps": [],
+      "risks": [
+        {
+          "category": "部署边界",
+          "description": "尚未确认公有云、私有化或内网部署",
+          "severity": "high",
+          "action": "确认数据是否允许出域"
+        },
+        {
+          "category": "性能容量",
+          "description": "缺少并发量，无法承诺吞吐和容量",
+          "severity": "medium",
+          "action": "补充峰值并发和日请求量"
+        },
+        {
+          "category": "知识覆盖",
+          "description": "资料库未召回相关证据",
+          "severity": "high",
+          "action": "补充产品资料或拒绝给出具体结论"
+        }
+      ],
+      "clarifying_questions": [
+        "数据是否允许发送到公有云 API？是否必须部署在客户内网？",
+        "峰值并发、日请求量和上下文长度分别是多少？",
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？",
+        "是否有现有产品白皮书、接口文档或安全规范可纳入知识库？"
+      ],
+      "evidence": [],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-023",
+      "executive_summary": "针对金融合规承诺生成，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "金融",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "合规承诺生成",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "公有云 API",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 5",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "未说明",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "产品手册",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "监管合规",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [
+        "客户关注首 Token 延迟还是完整答案延迟？目标指标是多少？"
+      ],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.1678
+        },
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "系统可以生成需求摘要、候选架构、实施步骤、资料引用、风险和待确认问题。系统不能根据演示资料自行承诺价格、法律合规、服务等级、准确率或最终容量；这些内容必须标记为待核验或进入人工审核。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1524
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    },
+    {
+      "case_id": "case-024",
+      "executive_summary": "针对制造业模型部署选型，建议先以证据驱动的 RAG 方案完成可控 PoC，再根据部署和性能约束确定模型服务形态。",
+      "requirements": [
+        {
+          "name": "行业",
+          "value": "制造业",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "业务场景",
+          "value": "模型部署选型",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "部署方式",
+          "value": "私有化",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "并发量",
+          "value": "峰值 2",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "时延要求",
+          "value": "首 Token 2 秒内",
+          "priority": "should",
+          "source": "customer_brief"
+        },
+        {
+          "name": "数据类型",
+          "value": "设备文档",
+          "priority": "must",
+          "source": "customer_brief"
+        },
+        {
+          "name": "合规要求",
+          "value": "数据不能出域",
+          "priority": "must",
+          "source": "customer_brief"
+        }
+      ],
+      "recommendation": [
+        "优先采用知识库检索结合大模型生成，所有产品能力结论绑定证据。",
+        "先以 PoC 验证核心问答和方案输出，再根据并发量决定 API 或私有化部署。",
+        "私有化场景优先评估本地推理服务、数据隔离和运维成本。"
+      ],
+      "architecture": [
+        "客户需求表单/接口",
+        "需求结构化与约束校验",
+        "产品知识库检索与证据召回",
+        "方案生成与引用校验",
+        "风险审核、追问和结果输出"
+      ],
+      "implementation_steps": [
+        "整理产品资料并建立版本化知识库",
+        "用黄金问题集验证召回和答案依据",
+        "接入 API 或本地模型并记录延迟、Token 和错误率",
+        "根据真实反馈迭代资料、提示词和审核规则"
+      ],
+      "risks": [
+        {
+          "category": "合规",
+          "description": "合规要求需要结合实际部署、日志和权限方案核验",
+          "severity": "high",
+          "action": "由安全/法务确认承诺边界"
+        }
+      ],
+      "clarifying_questions": [],
+      "evidence": [
+        {
+          "evidence_id": "KB-001",
+          "title": "部署与安全约束",
+          "excerpt": "公有云 API 适合快速验证和弹性扩展，客户数据需要按照出域政策脱敏。私有化部署适合数据不能出域、需要内网访问或已有 GPU 资源的客户，但客户需要承担模型文件、硬件、升级、监控和运维成本。",
+          "source_path": "data/knowledge/deployment-security.md",
+          "relevance": 0.2806
+        },
+        {
+          "evidence_id": "KB-002",
+          "title": "本地推理服务选型资料",
+          "excerpt": "本地模型服务适合数据不能出域、网络不稳定、边缘设备或需要固定模型版本的场景。云端 API 适合快速上线、模型能力要求高或请求量弹性变化的场景。两者可以通过 OpenAI-compatible API 统一上层调用方式。",
+          "source_path": "data/knowledge/inference-deployment.md",
+          "relevance": 0.2653
+        },
+        {
+          "evidence_id": "KB-003",
+          "title": "AI 产品能力矩阵",
+          "excerpt": "工作流可以依次完成需求提取、知识检索、结构化输出、条件分支和结果展示。对于客户的部署方式、数据出域、并发量、延迟和合规要求，应在生成方案前完成结构化校验。",
+          "source_path": "data/knowledge/product-capability.md",
+          "relevance": 0.1524
+        }
+      ],
+      "review_status": "pending",
+      "model_name": "offline-rules",
+      "latency_ms": null,
+      "usage": {}
+    }
+  ]
+}

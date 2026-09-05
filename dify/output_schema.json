@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AI Presales Solution Response",
+  "type": "object",
+  "required": [
+    "case_id",
+    "executive_summary",
+    "requirements",
+    "recommendation",
+    "architecture",
+    "implementation_steps",
+    "risks",
+    "clarifying_questions",
+    "evidence",
+    "review_status"
+  ],
+  "properties": {
+    "case_id": {"type": "string"},
+    "executive_summary": {"type": "string"},
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "value", "priority", "source"],
+        "properties": {
+          "name": {"type": "string"},
+          "value": {"type": "string"},
+          "priority": {"enum": ["must", "should", "nice_to_have"]},
+          "source": {"type": "string"}
+        }
+      }
+    },
+    "recommendation": {"type": "array", "items": {"type": "string"}},
+    "architecture": {"type": "array", "items": {"type": "string"}},
+    "implementation_steps": {"type": "array", "items": {"type": "string"}},
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["category", "description", "severity", "action"],
+        "properties": {
+          "category": {"type": "string"},
+          "description": {"type": "string"},
+          "severity": {"enum": ["low", "medium", "high"]},
+          "action": {"type": "string"}
+        }
+      }
+    },
+    "clarifying_questions": {"type": "array", "items": {"type": "string"}},
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["evidence_id", "title", "excerpt", "source_path", "relevance"],
+        "properties": {
+          "evidence_id": {"type": "string"},
+          "title": {"type": "string"},
+          "excerpt": {"type": "string"},
+          "source_path": {"type": "string"},
+          "relevance": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    },
+    "review_status": {"enum": ["not_required", "pending", "approved", "rejected"]}
+  }
+}
