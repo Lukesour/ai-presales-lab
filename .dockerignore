@@ -1,0 +1,13 @@
+.git
+.github
+.venv
+.runtime
+__pycache__
+*.pyc
+.env
+.env.*
+data/models
+llama_cpp/models
+data/results
+notebooks
+tests

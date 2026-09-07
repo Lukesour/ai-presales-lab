@@ -20,3 +20,11 @@ jobs:
         run: pytest -q
       - name: Offline evaluation
         run: python scripts/run_eval.py
+      - name: Agent evaluation
+        run: python scripts/run_agent_eval.py --output /tmp/agent-evaluation.json
+      - name: Security policy checks
+        run: python scripts/run_security_checks.py --output /tmp/security-evaluation.json
+      - name: Fine-tuning dataset checks
+        run: python scripts/check_finetune_dataset.py
+      - name: QLoRA dry run
+        run: python scripts/train_qlora.py --dry-run

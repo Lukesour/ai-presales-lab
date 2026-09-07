@@ -109,10 +109,101 @@
           "relevance": 0.1319
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 设备维修知识问答 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "llama.cpp + GGUF 量化（目标硬件复测）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "数据不出域且并发较低，先用本地量化服务验证可行性和资源占用。",
+        "decision_inputs": {
+          "private_data_boundary": true,
+          "peak_concurrency": 5,
+          "latency_requirement": "完整答案 10 秒内",
+          "deployment": "私有化"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-002",
@@ -204,10 +295,101 @@
           "relevance": 0.1365
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 内部制度检索 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 2 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "vLLM + LoRA（目标硬件复测）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "私有化且并发较高，优先验证批处理、KV Cache 和并发吞吐。",
+        "decision_inputs": {
+          "private_data_boundary": true,
+          "peak_concurrency": 20,
+          "latency_requirement": "首 Token 2 秒内",
+          "deployment": "内网"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-003",
@@ -287,10 +469,101 @@
           "relevance": 0.114
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 门店运营方案生成 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 2 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "云端 API（POC 基线）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "客户已接受公有云 API，优先缩短 POC 周期并建立质量基线。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": null,
+          "latency_requirement": "未说明",
+          "deployment": "公有云 API"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "not_required",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-004",
@@ -391,10 +664,101 @@
           "relevance": 0.1324
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 产品资料问答 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 2 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "llama.cpp + GGUF 量化（目标硬件复测）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "数据不出域且并发较低，先用本地量化服务验证可行性和资源占用。",
+        "decision_inputs": {
+          "private_data_boundary": true,
+          "peak_concurrency": null,
+          "latency_requirement": "未说明",
+          "deployment": "私有化"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-005",
@@ -467,10 +831,101 @@
         "是否有现有产品白皮书、接口文档或安全规范可纳入知识库？"
       ],
       "evidence": [],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 投标文件方案辅助 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "当前没有可用证据；先补齐资料，不进入产品能力承诺。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "混合路线：云端 API 建基线 + 本地服务做边界验证",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "部署边界尚未确认，先并行建立质量基线和私有化可行性证据。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": null,
+          "latency_requirement": "未说明",
+          "deployment": "未说明"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-006",
@@ -569,10 +1024,101 @@
           "relevance": 0.1455
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 运维规程检索 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "llama.cpp + GGUF 量化（目标硬件复测）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "数据不出域且并发较低，先用本地量化服务验证可行性和资源占用。",
+        "decision_inputs": {
+          "private_data_boundary": true,
+          "peak_concurrency": 8,
+          "latency_requirement": "首 Token 3 秒内",
+          "deployment": "内网"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-007",
@@ -670,10 +1216,101 @@
           "relevance": 0.1312
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 课程顾问方案生成 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "云端 API（POC 基线）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "客户已接受公有云 API，优先缩短 POC 周期并建立质量基线。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": null,
+          "latency_requirement": "完整答案 15 秒内",
+          "deployment": "公有云 API"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-008",
@@ -758,10 +1395,101 @@
           "relevance": 0.1633
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 API 产品选型 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "云端 API（POC 基线）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "客户已接受公有云 API，优先缩短 POC 周期并建立质量基线。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": 10,
+          "latency_requirement": "首 Token 2 秒内",
+          "deployment": "公有云 API"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "not_required",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-009",
@@ -827,10 +1555,101 @@
         "是否有现有产品白皮书、接口文档或安全规范可纳入知识库？"
       ],
       "evidence": [],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 跨文档故障分析 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "当前没有可用证据；先补齐资料，不进入产品能力承诺。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "混合路线：云端 API 建基线 + 本地服务做边界验证",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "部署边界尚未确认，先并行建立质量基线和私有化可行性证据。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": 3,
+          "latency_requirement": "未说明",
+          "deployment": "未说明"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-010",
@@ -929,10 +1748,101 @@
           "relevance": 0.1359
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 政策文件问答 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "vLLM + LoRA（目标硬件复测）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "私有化且并发较高，优先验证批处理、KV Cache 和并发吞吐。",
+        "decision_inputs": {
+          "private_data_boundary": true,
+          "peak_concurrency": 30,
+          "latency_requirement": "完整答案 8 秒内",
+          "deployment": "私有化"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-011",
@@ -1030,10 +1940,101 @@
           "relevance": 0.1225
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 售前知识检索 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "云端 API（POC 基线）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "客户已接受公有云 API，优先缩短 POC 周期并建立质量基线。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": 50,
+          "latency_requirement": "首 Token 1 秒内",
+          "deployment": "公有云 API"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-012",
@@ -1134,10 +2135,101 @@
           "relevance": 0.1023
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 项目规范问答 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "llama.cpp + GGUF 量化（目标硬件复测）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "数据不出域且并发较低，先用本地量化服务验证可行性和资源占用。",
+        "decision_inputs": {
+          "private_data_boundary": true,
+          "peak_concurrency": 6,
+          "latency_requirement": "未说明",
+          "deployment": "内网"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-013",
@@ -1223,10 +2315,101 @@
           "relevance": 0.179
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 客户经理话术辅助 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 1 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "云端 API（POC 基线）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "客户已接受公有云 API，优先缩短 POC 周期并建立质量基线。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": null,
+          "latency_requirement": "未说明",
+          "deployment": "公有云 API"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-014",
@@ -1334,10 +2517,101 @@
           "relevance": 0.1362
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 研发资料检索 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "llama.cpp + GGUF 量化（目标硬件复测）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "数据不出域且并发较低，先用本地量化服务验证可行性和资源占用。",
+        "decision_inputs": {
+          "private_data_boundary": true,
+          "peak_concurrency": null,
+          "latency_requirement": "未说明",
+          "deployment": "私有化"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-015",
@@ -1402,10 +2676,101 @@
         "是否有现有产品白皮书、接口文档或安全规范可纳入知识库？"
       ],
       "evidence": [],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 售后服务知识助手 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "当前没有可用证据；先补齐资料，不进入产品能力承诺。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "混合路线：云端 API 建基线 + 本地服务做边界验证",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "部署边界尚未确认，先并行建立质量基线和私有化可行性证据。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": 12,
+          "latency_requirement": "完整答案 12 秒内",
+          "deployment": "未说明"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-016",
@@ -1476,10 +2841,101 @@
           "relevance": 0.1367
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 商品运营分析 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 1 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "云端 API（POC 基线）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "客户已接受公有云 API，优先缩短 POC 周期并建立质量基线。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": 15,
+          "latency_requirement": "首 Token 3 秒内",
+          "deployment": "公有云 API"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "not_required",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-017",
@@ -1580,10 +3036,101 @@
           "relevance": 0.1158
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 网络故障方案辅助 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "vLLM + LoRA（目标硬件复测）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "私有化且并发较高，优先验证批处理、KV Cache 和并发吞吐。",
+        "decision_inputs": {
+          "private_data_boundary": true,
+          "peak_concurrency": 10,
+          "latency_requirement": "未说明",
+          "deployment": "内网"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-018",
@@ -1676,10 +3223,101 @@
           "relevance": 0.1041
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 制度与流程咨询 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 2 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "云端 API（POC 基线）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "客户已接受公有云 API，优先缩短 POC 周期并建立质量基线。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": null,
+          "latency_requirement": "未说明",
+          "deployment": "公有云 API"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-019",
@@ -1752,10 +3390,101 @@
         "是否有现有产品白皮书、接口文档或安全规范可纳入知识库？"
       ],
       "evidence": [],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 农技资料问答 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "当前没有可用证据；先补齐资料，不进入产品能力承诺。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "混合路线：云端 API 建基线 + 本地服务做边界验证",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "部署边界尚未确认，先并行建立质量基线和私有化可行性证据。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": null,
+          "latency_requirement": "未说明",
+          "deployment": "未说明"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-020",
@@ -1854,10 +3583,101 @@
           "relevance": 0.1315
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 运行规章检索 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "llama.cpp + GGUF 量化（目标硬件复测）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "数据不出域且并发较低，先用本地量化服务验证可行性和资源占用。",
+        "decision_inputs": {
+          "private_data_boundary": true,
+          "peak_concurrency": 4,
+          "latency_requirement": "完整答案 5 秒内",
+          "deployment": "私有化"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-021",
@@ -1944,10 +3764,101 @@
           "relevance": 0.1022
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 内容选题方案生成 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "云端 API（POC 基线）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "客户已接受公有云 API，优先缩短 POC 周期并建立质量基线。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": null,
+          "latency_requirement": "未说明",
+          "deployment": "公有云 API"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "not_required",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-022",
@@ -2014,10 +3925,101 @@
         "是否有现有产品白皮书、接口文档或安全规范可纳入知识库？"
       ],
       "evidence": [],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 不明用途的智能问答 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "当前没有可用证据；先补齐资料，不进入产品能力承诺。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "混合路线：云端 API 建基线 + 本地服务做边界验证",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "部署边界尚未确认，先并行建立质量基线和私有化可行性证据。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": null,
+          "latency_requirement": "未说明",
+          "deployment": "未说明"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-023",
@@ -2110,10 +4112,101 @@
           "relevance": 0.1524
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 合规承诺生成 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 2 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "云端 API（POC 基线）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "客户已接受公有云 API，优先缩短 POC 周期并建立质量基线。",
+        "decision_inputs": {
+          "private_data_boundary": false,
+          "peak_concurrency": 5,
+          "latency_requirement": "未说明",
+          "deployment": "公有云 API"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     },
     {
       "case_id": "case-024",
@@ -2212,10 +4305,101 @@
           "relevance": 0.1524
         }
       ],
+      "poc_plan": [
+        {
+          "phase": "1-需求与数据准备",
+          "objective": "确认业务目标、数据边界和可验收的黄金问题集",
+          "activities": [
+            "围绕 模型部署选型 收集脱敏样本和代表性问题",
+            "确认数据驻留、权限、日志、平均/峰值并发和首 Token/完整答案时延",
+            "使用已召回的 3 个证据片段，并保留文档版本和来源位置。"
+          ],
+          "deliverables": [
+            "需求基线",
+            "数据清单",
+            "黄金问题集 v1",
+            "风险与假设清单"
+          ],
+          "exit_criteria": "关键需求字段有明确值或被标记为待确认；测试集可复现。"
+        },
+        {
+          "phase": "2-RAG 与 Agent 基线",
+          "objective": "证明系统能检索正确资料、生成可审计方案并在高风险处停下来",
+          "activities": [
+            "建立带标题、版本、页码和权限标签的知识库",
+            "运行需求结构化、检索、方案生成、证据校验和人工审核工作流",
+            "记录每次 LLM、检索、工具调用和最终输出的 trace"
+          ],
+          "deliverables": [
+            "可运行 POC",
+            "引用证据",
+            "Agent 运行轨迹",
+            "基线评测报告"
+          ],
+          "exit_criteria": "结构化输出可解析；高风险需求能够触发审核；无证据不产生确定性承诺。"
+        },
+        {
+          "phase": "3-模型策略实验",
+          "objective": "用数据判断 Prompt、RAG、LoRA/QLoRA 和部署形态的投入顺序",
+          "activities": [
+            "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+            "对比 base 与 adapter 的需求抽取、风险分类、JSON 和工具参数质量",
+            "按目标硬件测量 TTFT、完整答案延迟、p95、吞吐、显存/RSS 和错误率"
+          ],
+          "deliverables": [
+            "训练 manifest",
+            "adapter",
+            "base/adapter 对比报告",
+            "部署选型矩阵"
+          ],
+          "exit_criteria": "adapter 在保留集上有可解释收益，且没有不可接受的泛化或安全回归。"
+        },
+        {
+          "phase": "4-验收与生产建议",
+          "objective": "把 POC 证据转化为客户可决策的交付路线",
+          "activities": [
+            "按黄金集、对抗集和峰值流量执行回归",
+            "复核权限、审计、脱敏、失败恢复、人工接管和运维责任边界",
+            "输出 PoC 结论、未决问题、生产化工作包和下一阶段报价输入"
+          ],
+          "deliverables": [
+            "验收报告",
+            "生产化路线图",
+            "容量与 TCO 假设",
+            "风险签字项"
+          ],
+          "exit_criteria": "每个结论都有证据、假设或待验证动作；不把演示数据描述为生产 SLA。"
+        }
+      ],
+      "model_strategy": {
+        "primary_serving_path": "llama.cpp + GGUF 量化（目标硬件复测）",
+        "fallback_serving_path": "OpenAI-compatible API，便于在云端、vLLM 和 llama.cpp 之间切换",
+        "retrieval_strategy": "RAG-first：产品事实、版本和持续更新内容不写进模型权重",
+        "fine_tuning_strategy": "仅在 Prompt + RAG 基线稳定后，用 LoRA/QLoRA 优化格式、风格、分类和工具参数",
+        "quantization_strategy": "在目标任务集上对 Q4/Q8 比较质量、TTFT、p95、吞吐和内存，不依据文件大小单独决策",
+        "serving_reason": "数据不出域且并发较低，先用本地量化服务验证可行性和资源占用。",
+        "decision_inputs": {
+          "private_data_boundary": true,
+          "peak_concurrency": 2,
+          "latency_requirement": "首 Token 2 秒内",
+          "deployment": "私有化"
+        },
+        "validation_before_commitment": [
+          "在客户真实黄金问题集上比较 base 与 adapter",
+          "在客户目标硬件、上下文长度和峰值并发下复测容量",
+          "由安全/法务确认数据驻留、权限、日志和合规边界"
+        ]
+      },
+      "assumptions": [
+        "本次离线分析使用合成客户案例和版本化知识资料。",
+        "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。"
+      ],
       "review_status": "pending",
       "model_name": "offline-rules",
       "latency_ms": null,
-      "usage": {}
+      "usage": {},
+      "run_id": null,
+      "trace_id": null
     }
   ]
 }

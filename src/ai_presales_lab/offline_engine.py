@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from .knowledge import KnowledgeBase
+from .model_advisor import recommend_model_strategy
+from .poc import build_poc_plan
 from .schemas import CustomerBrief, Evidence, Requirement, RiskFlag, SolutionResponse
 
 
@@ -28,6 +30,12 @@ class OfflineSolutionEngine:
         requirements = self._requirements(brief)
         risks = self._risks(brief, evidence)
         questions = self._questions(brief, evidence)
+        model_strategy = recommend_model_strategy(brief)
+        poc_plan = build_poc_plan(brief, evidence, model_strategy)
+        assumptions = [
+            "本次离线分析使用合成客户案例和版本化知识资料。",
+            "容量、价格、SLA、准确率和合规结论都需要在客户侧复核。",
+        ]
         if not evidence:
             return SolutionResponse(
                 case_id=brief.case_id,
@@ -36,6 +44,9 @@ class OfflineSolutionEngine:
                 risks=risks,
                 clarifying_questions=questions or ["请补充目标并发量、部署边界和可接受响应时间。"],
                 evidence=[],
+                poc_plan=poc_plan,
+                model_strategy=model_strategy,
+                assumptions=assumptions,
                 review_status="pending" if risks else "not_required",
                 model_name="offline-rules",
             )
@@ -69,6 +80,9 @@ class OfflineSolutionEngine:
             risks=risks,
             clarifying_questions=questions,
             evidence=evidence,
+            poc_plan=poc_plan,
+            model_strategy=model_strategy,
+            assumptions=assumptions,
             review_status="pending" if any(r.severity == "high" for r in risks) else "not_required",
             model_name="offline-rules",
         )

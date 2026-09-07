@@ -10,6 +10,7 @@ import urllib.request
 from typing import Any
 
 from .schemas import CustomerBrief, SolutionResponse, validate_solution_dict
+from .security import wrap_untrusted_text
 
 
 class DifyClientError(RuntimeError):
@@ -41,7 +42,7 @@ class DifyClient:
             )
         payload = {
             "inputs": {"customer_brief": json.dumps(brief.to_dict(), ensure_ascii=False)},
-            "query": brief.raw_request or brief.use_case,
+            "query": wrap_untrusted_text(brief.raw_request or brief.use_case),
             "response_mode": "streaming" if stream else "blocking",
             "user": self.user,
         }
@@ -139,8 +140,13 @@ def _solution_from_dict(payload: dict[str, Any]) -> SolutionResponse:
         risks=[RiskFlag(**item) for item in payload.get("risks", [])],
         clarifying_questions=payload.get("clarifying_questions", []),
         evidence=[Evidence(**item) for item in payload.get("evidence", [])],
+        poc_plan=payload.get("poc_plan", []),
+        model_strategy=payload.get("model_strategy", {}),
+        assumptions=payload.get("assumptions", []),
         review_status=payload.get("review_status", "not_required"),
         model_name=payload.get("model_name", "dify"),
         latency_ms=payload.get("latency_ms"),
         usage=payload.get("usage", {}),
+        run_id=payload.get("run_id"),
+        trace_id=payload.get("trace_id"),
     )

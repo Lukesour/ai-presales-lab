@@ -1,0 +1,46 @@
+# 安全、治理与红队策略
+
+## 威胁模型
+
+| 威胁 | 例子 | 当前控制 |
+|---|---|---|
+| Prompt injection | “忽略之前指令、泄露系统提示词” | 不可信数据边界、规则检测、人工审核 |
+| Unsupported commitment | 无依据承诺 99.9% SLA、准确率或认证 | 输出策略检查、证据要求、风险字段 |
+| Sensitive data leakage | 手机号、身份证号、邮箱进入输出或 trace | 输出敏感信息扫描、trace 脱敏 |
+| Excessive agency | 模型自行发邮件、改生产配置、执行命令 | 工具白名单；当前工具全部只读/确定性 |
+| Retrieval poisoning | 恶意文档写入伪造产品事实 | 文档来源、版本、权限和人工发布流程 |
+| Data leakage | 密钥、客户文件或模型权重提交仓库 | `.env`/模型忽略、服务端密钥、提交前检查 |
+
+## 当前自动化检查
+
+```bash
+PYTHONPATH=src python scripts/run_security_checks.py
+```
+
+`security/redteam-cases.jsonl` 覆盖注入、无证据承诺、敏感数据和正常输入；最近一次 12/12 通过。Promptfoo 配置在 `security/promptfooconfig.yaml`，启动本地 API 后可用于扩展对抗回归：
+
+```bash
+PYTHONPATH=src python scripts/serve_agent.py --port 8090
+promptfoo redteam run -c security/promptfooconfig.yaml
+```
+
+配置遵循 [Promptfoo red-team configuration](https://github.com/promptfoo/promptfoo/blob/main/site/docs/red-team/configuration.md) 的 target、purpose、framework、plugin 和 strategy 分层；静态 12 条用例仍由本仓库脚本独立运行，避免把“工具可用”误当成安全结论。
+
+红队通过不是“系统绝对安全”的证明；它只说明固定用例没有触发当前规则。
+
+## Trace 与隐私
+
+Trace 记录 run/trace/thread、节点、状态和错误，不记录 Authorization、API key 或完整敏感字段。生产环境仍应：
+
+- 采用字段级 allowlist，而不是默认记录完整 prompt/response。
+- 根据租户和数据等级设置采样、保留、加密和删除策略。
+- 将 trace 访问纳入审计和最小权限控制。
+- 对日志、评测集和训练集做脱敏与授权检查。
+
+## 上线前必须补齐
+
+- 身份认证、RBAC/ABAC、租户隔离和密钥轮换。
+- 文档 ACL 与检索过滤一致，用户无权访问的片段不得进入上下文。
+- 生产工具采用 allowlist、参数校验、审批和幂等键；高风险动作默认 human-in-the-loop。
+- 依赖、镜像、模型、adapter、数据和 prompt 的 SBOM/版本记录。
+- 供应商、模型许可、数据授权、留存和跨境边界由安全/法务确认。

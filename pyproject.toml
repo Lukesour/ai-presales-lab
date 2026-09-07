@@ -4,14 +4,32 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-presales-lab"
-version = "0.1.0"
-description = "A reproducible AI presales portfolio: Dify solution assistant and llama.cpp inference benchmark."
+version = "0.2.0"
+description = "A reproducible enterprise AI presales portfolio with Agent, RAG POC, QLoRA and model serving evaluation."
 requires-python = ">=3.11"
 dependencies = []
 
 [project.optional-dependencies]
 demo = ["gradio>=5.0"]
 dev = ["pytest>=8.0", "ruff>=0.9"]
+agent = ["langgraph>=1.0"]
+finetune = [
+    "accelerate>=1.0",
+    "bitsandbytes>=0.43",
+    "datasets>=3.0",
+    "peft>=0.13",
+    "torch>=2.4",
+    "transformers>=4.46",
+    "trl>=0.15"
+]
+finetune-colab = [
+    "accelerate>=1.0,<2",
+    "bitsandbytes>=0.43,<1",
+    "datasets>=3.0,<5",
+    "peft>=0.13,<1",
+    "transformers>=4.46,<5",
+    "trl>=0.15,<1"
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

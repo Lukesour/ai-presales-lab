@@ -1,0 +1,32 @@
+{
+  "model_name_or_path": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": null,
+  "data": {
+    "train_file": "data/finetuning/train.jsonl",
+    "dev_file": "data/finetuning/dev.jsonl",
+    "test_file": "data/finetuning/test.jsonl"
+  },
+  "output_dir": ".runtime/models/qwen2.5-0.5b-presales-lora-lowmem",
+  "lora": {
+    "r": 16,
+    "alpha": 32,
+    "dropout": 0.05,
+    "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "up_proj", "down_proj", "gate_proj"]
+  },
+  "training": {
+    "epochs": 3,
+    "learning_rate": 0.0001,
+    "per_device_train_batch_size": 1,
+    "per_device_eval_batch_size": 1,
+    "gradient_accumulation_steps": 16,
+    "gradient_checkpointing": true,
+    "optim": "paged_adamw_8bit",
+    "warmup_ratio": 0.05,
+    "eval_strategy": "epoch",
+    "save_strategy": "epoch",
+    "logging_steps": 5,
+    "max_length": 1024,
+    "assistant_only_loss": true,
+    "seed": 42
+  }
+}

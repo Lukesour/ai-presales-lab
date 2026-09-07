@@ -72,10 +72,15 @@ class SolutionResponse:
     risks: list[RiskFlag] = field(default_factory=list)
     clarifying_questions: list[str] = field(default_factory=list)
     evidence: list[Evidence] = field(default_factory=list)
+    poc_plan: list[dict[str, Any]] = field(default_factory=list)
+    model_strategy: dict[str, Any] = field(default_factory=dict)
+    assumptions: list[str] = field(default_factory=list)
     review_status: ReviewStatus = "not_required"
     model_name: str = "mock"
     latency_ms: float | None = None
     usage: dict[str, Any] = field(default_factory=dict)
+    run_id: str | None = None
+    trace_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -112,3 +117,15 @@ def validate_solution_dict(payload: dict[str, Any]) -> None:
             raise TypeError("each evidence item must be an object")
         for field_name in ("evidence_id", "title", "excerpt", "source_path"):
             _require_string(item.get(field_name), f"evidence.{field_name}")
+    for field_name in ("poc_plan", "assumptions"):
+        if field_name in payload and not isinstance(payload[field_name], list):
+            raise TypeError(f"{field_name} must be an array")
+    for item in payload.get("poc_plan", []):
+        if not isinstance(item, dict):
+            raise TypeError("each poc_plan item must be an object")
+        for field_name in ("phase", "objective", "exit_criteria"):
+            _require_string(item.get(field_name), f"poc_plan.{field_name}")
+    if "model_strategy" in payload and not isinstance(payload["model_strategy"], dict):
+        raise TypeError("model_strategy must be an object")
+    if "assumptions" in payload and any(not isinstance(item, str) for item in payload["assumptions"]):
+        raise TypeError("assumptions items must be strings")

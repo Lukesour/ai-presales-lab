@@ -1,0 +1,194 @@
+# Colab QLoRA 运行手册
+
+本手册用于一次性的 GPU 实验，不把 Colab 当成生产环境。Colab 的 GPU 型号、可用时间和免费资源配额会动态变化；每次实验都必须保存 GPU、驱动、包版本、模型 revision、数据 manifest、配置、checkpoint 和评估结果。详见 [Google Colab 官方 FAQ](https://research.google.com/colaboratory/faq.html)。
+
+## 1. 你必须先完成的事情
+
+| 任务 | 是否必须 | 说明 |
+| --- | --- | --- |
+| 准备 Google 账号并打开 Colab | 是 | 进入 [Google Colab](https://colab.research.google.com/) |
+| 把当前仓库推到 GitHub | 强烈建议 | notebook 会通过 HTTPS clone；建议公开仓库，不要把密钥写进仓库 |
+| 选择 GPU runtime | 是 | Colab 菜单：Runtime → Change runtime type → Hardware accelerator → GPU |
+| 授权 Google Drive | 推荐 | notebook 默认开启，用于保存 checkpoint、adapter 和报告；不想授权可改 `USE_DRIVE=False`，但必须在结束前下载 zip |
+| 点击并运行 notebook 单元格 | 是 | 我不能代替你登录 Google、接受 Colab 资源分配或授权 Drive |
+
+如果仓库尚未公开，先在本地提交并推送代码，再把真实地址填入 notebook 的 `PROJECT_REPO_URL`。不要把 Hugging Face Token、GitHub Token、客户文档或个人隐私写进 URL、代码和 notebook 输出。
+
+## 2. 推荐路径：直接运行预配置 notebook
+
+仓库已经提供 [`notebooks/qlora_colab.ipynb`](../notebooks/qlora_colab.ipynb)。打开方式：
+
+1. 打开 Colab。
+2. 选择 File → Open notebook → GitHub。
+3. 输入你的仓库地址，选择 `notebooks/qlora_colab.ipynb`。
+4. 在第一个配置单元格只修改：
+
+   ```python
+   PROJECT_REPO_URL = "https://github.com/<your-user>/ai-presales-lab.git"
+   USE_DRIVE = True
+   LOW_MEMORY = False
+   ```
+
+5. 依次运行所有单元格，不要跳过 GPU preflight、数据检查和 dry-run。
+
+notebook 已经负责：安装 `finetune-colab` extra、保留 Colab 自带 PyTorch/CUDA、检查 GPU、重建 72 条合成数据、保存 `pip-freeze` 和 runtime 元数据、把训练输出直接写入 Drive、训练后比较 base/adapter、打包结果。
+
+## 3. 手动路径（notebook 无法打开时）
+
+### 3.1 选择 GPU 并检查
+
+在 Colab 菜单中选择 GPU runtime，然后执行：
+
+```python
+!nvidia-smi
+```
+
+```python
+import torch
+assert torch.cuda.is_available(), "没有 CUDA GPU，请重新选择 GPU runtime"
+print(torch.__version__)
+print(torch.cuda.get_device_name(0))
+print(round(torch.cuda.get_device_properties(0).total_memory / 1024**3, 2), "GB")
+print("bf16:", torch.cuda.is_bf16_supported())
+```
+
+免费 runtime 的 GPU 不保证固定型号；本项目默认的 Qwen2.5-0.5B 4-bit QLoRA 适合先做小规模可复现实验。不要因为分配到了更大 GPU 就直接把结果写成通用性能或生产 SLA。
+
+### 3.2 拉取代码并安装依赖
+
+```python
+!git clone https://github.com/<your-user>/ai-presales-lab.git /content/ai-presales-lab
+%cd /content/ai-presales-lab
+!python -m pip install -q -e .
+!python -m pip install -q -e '.[finetune-colab]'
+```
+
+`finetune-colab` 不声明 `torch`，避免不必要地覆盖 Colab 自带的 CUDA 版 PyTorch。训练依赖包括 Transformers、TRL、PEFT、bitsandbytes、datasets 和 accelerate。QLoRA 的 4-bit NF4 配置与训练逻辑见 [Hugging Face bitsandbytes 文档](https://huggingface.co/docs/transformers/quantization/bitsandbytes) 和 [TRL SFTTrainer 文档](https://huggingface.co/docs/trl/sft_trainer)。
+
+### 3.3 构建数据、校验数据、dry-run
+
+```python
+!PYTHONPATH=src python scripts/build_finetune_dataset.py
+!PYTHONPATH=src python scripts/check_finetune_dataset.py
+!PYTHONPATH=src python scripts/train_qlora.py --dry-run
+```
+
+预期结果：train/dev/test 为 `42/12/18`，总计 72 条；ID 唯一；manifest 中的 SHA-256 校验通过；dry-run 输出 `dataset and training configuration parsed successfully`。如果这里失败，不要继续启动正式训练。
+
+### 3.4 正式训练
+
+默认配置：
+
+- 基座：`Qwen/Qwen2.5-0.5B-Instruct`。
+- 量化：4-bit NF4 + double quantization。
+- LoRA：`r=16`、`alpha=32`、`dropout=0.05`，覆盖 Q/K/V/O、上下投影和 gate 投影。
+- 训练：3 epochs、learning rate `1e-4`、batch size 2、gradient accumulation 8、gradient checkpointing、`paged_adamw_8bit`。
+- 序列长度：2048；小显存时使用 1024。
+- 评估和保存：按 epoch 执行，最多保留 2 个 checkpoint。
+
+运行：
+
+```python
+!PYTHONPATH=src python scripts/train_qlora.py \
+  --config configs/finetune/trl_qlora.json
+```
+
+如果显存不足，使用低显存配置：
+
+```python
+!PYTHONPATH=src python scripts/train_qlora.py \
+  --config configs/finetune/trl_qlora_colab_lowmem.json
+```
+
+低显存配置将 batch size 降为 1、gradient accumulation 提高到 16、最大长度降为 1024；有效 batch size 和训练目标保持接近，不要同时随意改变多个变量。
+
+### 3.5 中断后续跑
+
+如果训练中断，先把 checkpoint 复制到持久化位置，然后查看目录：
+
+```python
+from pathlib import Path
+print(sorted(Path('/content/drive/MyDrive/ai-presales-lab-results/active-training').glob('checkpoint-*')))
+```
+
+选择最新的 `checkpoint-*` 目录，重新启动 runtime、重新运行安装和数据检查，然后执行：
+
+```python
+!PYTHONPATH=src python scripts/train_qlora.py \
+  --config /content/trl_qlora_runtime.json \
+  --resume-from-checkpoint /content/drive/MyDrive/ai-presales-lab-results/active-training/checkpoint-XXX
+```
+
+预配置 notebook 在 `USE_DRIVE=True` 时会把训练输出设到 Drive；续跑前仍需要你确认 checkpoint 路径，不能盲目使用旧 checkpoint。
+
+## 4. 训练后必须做的对比评估
+
+base 和 adapter 必须使用同一个 `data/finetuning/test.jsonl`、相同生成参数和相同评测脚本。示例：
+
+```python
+!PYTHONPATH=src python scripts/evaluate_finetuned_model.py \
+  --split data/finetuning/test.jsonl \
+  --max-new-tokens 1024 \
+  --output data/results/colab/qlora/base_eval.json
+```
+
+```python
+!PYTHONPATH=src python scripts/evaluate_finetuned_model.py \
+  --split data/finetuning/test.jsonl \
+  --max-new-tokens 1024 \
+  --adapter /content/drive/MyDrive/ai-presales-lab-results/active-training \
+  --output data/results/colab/qlora/adapter_eval.json
+```
+
+至少记录：
+
+- `json_parse_rate`：输出是否是可解析 JSON。
+- `schema_pass_rate`：是否满足解决方案 schema。
+- `policy_pass_rate`：是否通过输出和敏感数据策略。
+- `conservative_no_evidence`：证据不足时是否保守回答。
+- train/eval loss、训练时间、GPU 型号、显存峰值、是否 OOM。
+
+不要只看训练 loss。若 adapter 在训练集上变好、held-out test 变差，说明可能过拟合；若结构化输出变好但证据或安全策略变差，也不能称为整体效果提升。
+
+## 5. 常见问题处理
+
+| 现象 | 处理顺序 |
+| --- | --- |
+| `CUDA unavailable` | Runtime → Change runtime type → GPU；重新运行 GPU preflight |
+| `bitsandbytes` 找不到 CUDA | 确认是 Linux NVIDIA runtime；重启 runtime 后重新安装 `finetune-colab`，不要安装 CPU 版 torch |
+| `CUDA out of memory` | 先将 `LOW_MEMORY=True` 或改用 `trl_qlora_colab_lowmem.json`；仍失败时将 max length 从 1024 降到 768，并保留日志 |
+| 训练后输出目录找不到 | 先确认 Drive 是否挂载；检查 `active-training/checkpoint-*` 和 `adapter_config.json` |
+| Hugging Face 下载超时 | 重新运行下载单元格；不要把 Token 写入 notebook。公开模型不需要 Token |
+| TRL 参数不兼容 | 重启 runtime，重新运行安装；保留 `pip-freeze.txt` 和完整错误。不要静默修改训练参数后声称可复现 |
+| Colab runtime 断开 | 重新挂载 Drive，使用最新 checkpoint 的 `--resume-from-checkpoint`；若没有 checkpoint，只能重新训练 |
+| JSON parse rate 很低 | 先检查 max_new_tokens、chat template 和 prompt/completion loss 模式，再判断是否需要增加数据或调整训练，不要直接修改 test 结果 |
+
+## 6. 你最终应下载/保存的文件
+
+建议从 Drive 或 notebook 生成的 zip 中保留：
+
+```text
+runtime.json
+pip-freeze.txt
+trl_qlora.json
+manifest.json
+base_eval.json
+adapter_eval.json
+adapter/adapter_config.json
+adapter/adapter_model.safetensors
+adapter/metrics.json
+```
+
+将 `base_eval.json`、`adapter_eval.json`、`runtime.json` 和 `metrics.json` 下载回本地仓库的 `data/results/colab/qlora/` 后，再决定是否提交。模型权重和 checkpoint 可以只保存在 Drive，不必提交到 GitHub。
+
+## 7. 简历可使用的结果口径
+
+只有在真实训练和 test 对比完成后，才可以写：
+
+> 在 Colab `[GPU 型号]` 上使用 Qwen2.5-0.5B-Instruct 完成 NF4 QLoRA 训练，记录训练耗时 `[X]`、峰值显存 `[Y]`；在固定 held-out test split 上，base/adapter 的 JSON parse、schema 和 policy 指标分别为 `[结果]`。
+
+如果只完成 dry-run，应写：
+
+> 完成 ShareGPT 数据构建、case-level split、manifest/hash、TRL/PEFT QLoRA 训练入口、LLaMA Factory 配置和 Colab 可复现实验流程，已通过 dry-run；真实 GPU 训练结果待补充。
+
+不要把 Colab 单次实验结果写成通用模型能力、生产 SLA、客户 KPI 或所有 GPU 都适用的性能结论。适配器部署到真实服务或导出 GGUF 前，仍需重新跑质量、安全、并发、延迟和成本回归。
