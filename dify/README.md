@@ -11,16 +11,25 @@
 
 ## 启动方式
 
-在单独目录按 Dify 官方 Docker Compose 文档启动服务：
+Dify 应用层不要放进 Colab：它需要数据库、向量库、插件守护进程和持久化文件存储；Colab 只负责一次性的 llama.cpp 性能实验。当前本机已按官方 Docker Compose 配置准备运行时文件到被忽略的 `.runtime/dify/docker/`，端口使用 8081：
 
 ```bash
-git clone https://github.com/langgenius/dify.git
-cd dify/docker
-cp .env.example .env
-docker compose up -d
+cd /Users/suan/Desktop/求职/解决方案/ai-presales-lab
+COMPOSE_PROFILES=weaviate,postgresql,collaboration \
+docker compose -p ai-presales-dify \
+  -f .runtime/dify/docker/docker-compose.yaml \
+  --env-file .runtime/dify/docker/.env up -d
 ```
 
-首次访问 `http://localhost/install` 完成初始化。你当前的 Apple Silicon 环境先执行 `scripts/check_dify.sh` 做架构 smoke test；如果某个镜像不兼容，使用 Dify 官方文档提供的源码或远程实例，不要修改本作品集的接口契约。
+首次访问 `http://localhost:8081/install` 完成初始化。重启或查看状态：
+
+```bash
+docker compose -p ai-presales-dify \
+  -f .runtime/dify/docker/docker-compose.yaml \
+  --env-file .runtime/dify/docker/.env ps
+```
+
+如果你在另一台机器重新部署，仍使用 Dify 官方 release/compose 文件，并重新记录版本、镜像 digest、模型提供商和知识库版本；不要把 `.runtime/` 或 Dify 的数据卷提交到 GitHub。
 
 ## 知识库资料
 
@@ -36,14 +45,25 @@ docker compose up -d
 
 ## 工作流节点
 
-工作流按以下顺序配置：
+当前可录屏的最小闭环是：
 
-1. `需求输入`：接收 `customer_brief` 和原始客户描述
-2. `需求结构化`：提取行业、场景、数据类型、部署、并发、时延和合规
-3. `知识检索`：检索产品能力、部署和安全资料
-4. `方案生成`：只基于检索上下文生成方案
-5. `证据与风险检查`：没有来源的事实改成待确认项
-6. `条件分支`：高风险或低置信度进入追问，否则输出方案
-7. `结构化响应`：返回与 `output_schema.json` 对齐的 JSON
+`开始 → 知识检索 → LLM → 最终方案回复`
+
+LLM 节点的关键配置是：
+
+- `context.enabled=true`
+- 上下文变量选择 `知识检索.result`
+- 知识库只绑定 `企业 AI 解决方案售前知识库`
+- `top_k=4`，经济型关键词检索，关闭重排模型依赖
+- 本地演示使用 Qwen2.5-0.5B Q4，`temperature=0.1`、`max_tokens=400`
+
+这条链路用于证明“需求进入、证据检索、模型生成、结果展示”确实打通；正式质量演示应切换到更强的试用 API，并使用同一套提示词和知识库。0.5B 模型适合展示本地服务接入和延迟，不应被包装成生产级方案生成模型。
+
+如果要扩展到完整售前流程，再按以下顺序增加节点：
+
+1. `需求结构化`：提取行业、场景、数据类型、部署、并发、时延和合规
+2. `证据与风险检查`：没有来源的事实改成待确认项
+3. `条件分支`：高风险或低置信度进入追问，否则输出方案
+4. `结构化响应`：返回与 `output_schema.json` 对齐的 JSON
 
 Dify App API 的密钥只能由 `DifyClient` 在服务端调用，不能放进 Gradio 前端代码或浏览器请求中。

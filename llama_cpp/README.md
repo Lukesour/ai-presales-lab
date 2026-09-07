@@ -1,6 +1,6 @@
 # llama.cpp 本地推理复现
 
-本目录验证模型基础设施能力：在 Apple Silicon 上运行量化 GGUF 模型，暴露 OpenAI-compatible 接口，并用实测数据讨论部署取舍。
+本目录验证模型基础设施能力：运行量化 GGUF 模型，暴露 OpenAI-compatible 接口，并用实测数据讨论部署取舍。
 
 ## 上游项目
 
@@ -8,7 +8,11 @@
 - 官方说明支持 Apple Silicon、Metal 和 GGUF 量化模型
 - 本作品集不提交模型文件；模型许可证和使用范围需要单独核查
 
-## macOS 原生构建
+## 推荐路径：Colab GPU 实测
+
+使用 [`notebooks/llama_cpp_colab_benchmark.ipynb`](../notebooks/llama_cpp_colab_benchmark.ipynb) 运行一次完整的 CUDA Q4/Q8 对比。它不会把 llama-server 暴露到公网，且会把模型 revision、SHA-256、GPU、驱动、延迟、TTFT、聚合吞吐、CPU RSS 和 GPU VRAM 一起记录。运行协议与 Colab 限制见 [`docs/colab-runbook.md`](../docs/colab-runbook.md)。
+
+## macOS 原生构建（本机 smoke test）
 
 ```bash
 git clone https://github.com/ggml-org/llama.cpp.git
@@ -59,3 +63,5 @@ PYTHONPATH=src python3 scripts/benchmark_llama.py \
 ```
 
 重复运行 Q4/Q5/Q8、CPU/Metal、单请求/并发 4 和不同上下文长度，记录模型文件、硬件、启动参数和日期。最终只引用 `data/results/` 中实际生成的数据。
+
+benchmark JSON 还包含 `throughput_tokens_per_second`、`server_memory_mib`、`gpu_memory_mib` 和环境元数据；使用 `scripts/summarize_benchmarks.py` 可将同一批 Q4/Q8 报告汇总。

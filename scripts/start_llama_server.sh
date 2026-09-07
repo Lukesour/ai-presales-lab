@@ -7,6 +7,8 @@ LLAMA_CONTEXT="${LLAMA_CONTEXT:-4096}"
 LLAMA_GPU_LAYERS="${LLAMA_GPU_LAYERS:-999}"
 LLAMA_HOST="${LLAMA_HOST:-127.0.0.1}"
 LLAMA_PORT="${LLAMA_PORT:-8080}"
+LLAMA_MODEL_ALIAS="${LLAMA_MODEL_ALIAS:-local-qwen}"
+LLAMA_API_KEY="${LLAMA_API_KEY:-}"
 
 if [[ -z "$LLAMA_MODEL_PATH" ]]; then
   echo "Set LLAMA_MODEL_PATH to a local .gguf file before starting the server." >&2
@@ -22,10 +24,18 @@ if [[ ! -f "$LLAMA_MODEL_PATH" ]]; then
 fi
 
 echo "Starting llama.cpp on http://${LLAMA_HOST}:${LLAMA_PORT}"
-echo "model=${LLAMA_MODEL_PATH} context=${LLAMA_CONTEXT} gpu_layers=${LLAMA_GPU_LAYERS}"
+echo "model=${LLAMA_MODEL_PATH} alias=${LLAMA_MODEL_ALIAS} context=${LLAMA_CONTEXT} gpu_layers=${LLAMA_GPU_LAYERS}"
+LLAMA_EXTRA_ARGS=()
+if [[ -n "$LLAMA_MODEL_ALIAS" ]]; then
+  LLAMA_EXTRA_ARGS+=(--alias "$LLAMA_MODEL_ALIAS")
+fi
+if [[ -n "$LLAMA_API_KEY" ]]; then
+  LLAMA_EXTRA_ARGS+=(--api-key "$LLAMA_API_KEY")
+fi
 exec "$LLAMA_SERVER_BIN" \
   -m "$LLAMA_MODEL_PATH" \
   -c "$LLAMA_CONTEXT" \
   -ngl "$LLAMA_GPU_LAYERS" \
   --host "$LLAMA_HOST" \
-  --port "$LLAMA_PORT"
+  --port "$LLAMA_PORT" \
+  "${LLAMA_EXTRA_ARGS[@]}"

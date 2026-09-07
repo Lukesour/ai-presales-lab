@@ -15,4 +15,4 @@
 5. Compare quality, latency, throughput, memory, operational effort and total cost.
 6. Present a PoC recommendation with explicit assumptions and a production validation plan.
 
-The Apple Silicon measurements in this repository are local engineering evidence, not a production capacity promise.
+The Colab or Apple Silicon measurements in this repository are local engineering evidence, not a production capacity promise. Re-run on the customer's target hardware before making a capacity or SLA commitment.

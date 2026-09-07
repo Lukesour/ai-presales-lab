@@ -4,10 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
+import os
+import platform
+import shutil
 import statistics
 import subprocess
+import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -68,6 +73,9 @@ def main() -> int:
     parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--no-stream", action="store_true")
     parser.add_argument("--label", default="unlabeled")
+    parser.add_argument("--model-path", type=Path, default=None)
+    parser.add_argument("--context", type=int, default=None)
+    parser.add_argument("--gpu-layers", type=int, default=None)
     parser.add_argument(
         "--server-pid", type=int, default=None, help="PID of llama-server for RSS sampling"
     )
@@ -82,26 +90,47 @@ def main() -> int:
     monitor = RssMonitor(args.server_pid) if args.server_pid else None
     if monitor:
         monitor.start()
+    gpu_monitor = GpuMemoryMonitor(args.server_pid) if args.server_pid else None
+    if gpu_monitor:
+        gpu_monitor.start()
     with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
         futures = [pool.submit(one_request, client, prompt, not args.no_stream) for prompt in jobs]
         for future in as_completed(futures):
             results.append(future.result())
     if monitor:
         monitor.stop()
+    if gpu_monitor:
+        gpu_monitor.stop()
     wall_ms = round((time.perf_counter() - started) * 1000, 2)
     successful = [result for result in results if result.get("ok")]
     latencies = [float(result["latency_ms"]) for result in successful]
     ttfts = [float(result["ttft_ms"]) for result in successful if result.get("ttft_ms") is not None]
     valid_json_count = sum(bool(result.get("valid_json")) for result in successful)
+    completion_tokens = sum(
+        int(result["completion_tokens"])
+        for result in successful
+        if result.get("completion_tokens") is not None
+    )
+    wall_seconds = wall_ms / 1000
     report = {
         "label": args.label,
         "base_url": client.base_url,
+        "model": _model_metadata(args.model_path),
+        "environment": _environment_metadata(),
+        "runtime": {
+            "context": args.context,
+            "gpu_layers": args.gpu_layers,
+        },
         "requests": args.requests,
         "concurrency": args.concurrency,
         "streaming": not args.no_stream,
         "wall_time_ms": wall_ms,
         "success": len(successful),
         "failure": len(results) - len(successful),
+        "completion_tokens": completion_tokens,
+        "throughput_tokens_per_second": round(completion_tokens / wall_seconds, 2)
+        if completion_tokens and wall_seconds
+        else None,
         "structured_json_pass": valid_json_count,
         "structured_json_pass_rate": round(valid_json_count / len(successful), 4)
         if successful
@@ -109,6 +138,7 @@ def main() -> int:
         "latency_ms": _stats(latencies),
         "ttft_ms": _stats(ttfts),
         "server_memory_mib": monitor.stats() if monitor else None,
+        "gpu_memory_mib": gpu_monitor.stats() if gpu_monitor else None,
         "results": results,
     }
     print(json.dumps(report, ensure_ascii=False, indent=2))
@@ -142,6 +172,29 @@ def _is_json(text: str) -> bool:
     except json.JSONDecodeError:
         return False
     return True
+
+
+def _model_metadata(model_path: Path | None) -> dict[str, object] | None:
+    if model_path is None:
+        return None
+    metadata: dict[str, object] = {"path": str(model_path)}
+    if model_path.exists():
+        metadata["file_size_mib"] = round(model_path.stat().st_size / (1024 * 1024), 2)
+        metadata["sha256"] = _sha256(model_path)
+    lower_name = model_path.name.lower()
+    for quantization in ("q2", "q3", "q4", "q5", "q6", "q8", "f16", "bf16"):
+        if quantization in lower_name:
+            metadata["quantization"] = quantization.upper()
+            break
+    return metadata
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 class RssMonitor:
@@ -181,6 +234,67 @@ class RssMonitor:
             self._stop.wait(self.interval_s)
 
 
+class GpuMemoryMonitor(RssMonitor):
+    """Sample llama-server VRAM usage through nvidia-smi when available."""
+
+    def __init__(self, pid: int, interval_s: float = 0.2):
+        super().__init__(pid, interval_s)
+        self._command_available = shutil.which("nvidia-smi") is not None
+
+    def _run(self) -> None:
+        if not self._command_available:
+            return
+        while not self._stop.is_set():
+            gpu_mib = _gpu_rss_mib(self.pid)
+            if gpu_mib is not None:
+                self._samples.append(gpu_mib)
+            self._stop.wait(self.interval_s)
+
+
+def _environment_metadata() -> dict[str, object]:
+    metadata: dict[str, object] = {
+        "platform": platform.platform(),
+        "python": sys.version.split()[0],
+    }
+    gpu_info = _nvidia_gpu_info()
+    if gpu_info:
+        metadata["nvidia"] = gpu_info
+    for key in ("LLAMA_CPP_COMMIT", "LLAMA_CPP_VERSION", "MODEL_REPO", "MODEL_REVISION"):
+        value = os.getenv(key)
+        if value:
+            metadata[key.lower()] = value
+    return metadata
+
+
+def _nvidia_gpu_info() -> dict[str, str] | None:
+    if shutil.which("nvidia-smi") is None:
+        return None
+    try:
+        output = subprocess.check_output(
+            [
+                "nvidia-smi",
+                "--query-gpu=name,driver_version,memory.total,compute_cap",
+                "--format=csv,noheader,nounits",
+            ],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            timeout=2,
+        ).strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if not output:
+        return None
+    fields = [field.strip() for field in output.splitlines()[0].split(",")]
+    if len(fields) != 4:
+        return None
+    return {
+        "name": fields[0],
+        "driver_version": fields[1],
+        "memory_total_mib": fields[2],
+        "compute_capability": fields[3],
+    }
+
+
 def _rss_mib(pid: int) -> float | None:
     try:
         output = subprocess.check_output(["ps", "-o", "rss=", "-p", str(pid)], text=True).strip()
@@ -188,6 +302,32 @@ def _rss_mib(pid: int) -> float | None:
     except (OSError, ValueError, subprocess.CalledProcessError):
         return None
     return rss_kib / 1024
+
+
+def _gpu_rss_mib(pid: int) -> float | None:
+    try:
+        output = subprocess.check_output(
+            [
+                "nvidia-smi",
+                "--query-compute-apps=pid,used_gpu_memory",
+                "--format=csv,noheader,nounits",
+            ],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    for line in output.splitlines():
+        fields = [field.strip() for field in line.split(",")]
+        if len(fields) != 2:
+            continue
+        try:
+            if int(fields[0]) == pid:
+                return float(fields[1])
+        except ValueError:
+            continue
+    return 0.0
 
 
 if __name__ == "__main__":

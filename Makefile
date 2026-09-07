@@ -1,7 +1,7 @@
 PYTHON ?= python3
 PYTHONPATH := src
 
-.PHONY: test lint demo eval benchmark-llama dify-check
+.PHONY: test lint demo eval benchmark-llama summarize-benchmarks dify-check
 
 test:
 	PYTHONPATH=$(PYTHONPATH) $(PYTHON) -m pytest -q
@@ -17,6 +17,9 @@ eval:
 
 benchmark-llama:
 	PYTHONPATH=$(PYTHONPATH) $(PYTHON) scripts/benchmark_llama.py --output data/results/llama-benchmark.json
+
+summarize-benchmarks:
+	PYTHONPATH=$(PYTHONPATH) $(PYTHON) scripts/summarize_benchmarks.py data/results/q4-metal-c1.json data/results/q8-metal-c1.json --output data/results/q4-q8-summary.json
 
 dify-check:
 	./scripts/check_dify.sh

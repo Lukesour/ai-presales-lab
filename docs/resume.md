@@ -13,10 +13,10 @@
 
 ## Project Two
 
-**本地大模型推理服务与性能评测｜llama.cpp、GGUF、量化、Metal**
+**本地大模型推理服务与性能评测｜llama.cpp、GGUF、量化、CUDA/Metal**
 
-- 基于 llama.cpp 在 Apple Silicon 上构建 Metal 加速的 GGUF 本地推理服务，提供 OpenAI-compatible API，支持上层应用切换本地模型后端
-- 编写 Python 客户端和并发基准脚本，对 Q4/Q5/Q8 量化、CPU/Metal、上下文长度和并发数进行对比测试
+- 基于 llama.cpp 构建 CUDA/Metal 加速的 GGUF 本地推理服务，提供 OpenAI-compatible API，支持上层应用切换本地模型后端
+- 编写 Python 客户端和并发基准脚本，在 Colab GPU/Apple Silicon 上对 Q4/Q5/Q8 量化、上下文长度和并发数进行对比测试，记录 TTFT、p95、聚合吞吐、CPU RSS、GPU VRAM 和结构化输出通过率
 - 记录首 Token 延迟、生成速度、p95 延迟、内存占用和结构化输出通过率，形成云端 API 与本地部署的选型依据
 - 针对数据不能出域、模型质量、运维成本和容量承诺等约束，输出私有化 PoC 到生产部署的风险与验证清单
 

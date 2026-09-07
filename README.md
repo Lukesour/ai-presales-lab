@@ -3,7 +3,7 @@
 一个面向 AI 售前岗位的差异化作品集：
 
 1. 应用层：基于 Dify 搭建企业 AI 解决方案售前助手
-2. 基础设施层：基于 llama.cpp 在 Apple Silicon 上运行本地量化模型并评测性能
+2. 基础设施层：基于 llama.cpp 在 Colab CUDA（本机也支持 Apple Silicon Metal）上运行本地量化模型并评测性能
 
 这两个项目共享一套合成客户需求和结果契约，但不重复实现第二套 RAG 或 Agent。前者回答“如何把模型能力交付成客户可用的方案”，后者回答“如何把模型部署成可测量、可选型的服务”。
 
@@ -12,7 +12,8 @@
 - 无 API Key 的离线方案引擎、知识检索和 24 条评测案例
 - Dify App API 客户端，密钥只在服务端读取
 - llama.cpp OpenAI-compatible 客户端，支持普通调用和 SSE 流式首 Token 测量
-- llama.cpp 并发基准脚本
+- llama.cpp 并发基准脚本，记录聚合吞吐、CPU RSS 和 NVIDIA GPU VRAM
+- 可直接上传到 Google Colab 的 Q4/Q8 CUDA 实测 notebook
 - Gradio 演示页面（可选依赖）
 - Dify 工作流配置说明、输出契约和面试材料
 
@@ -24,6 +25,7 @@
 ├── data/evaluation/         24 条客户需求黄金问题集
 ├── dify/                    Dify 工作流说明和响应契约
 ├── llama_cpp/               本地推理服务复现说明
+├── notebooks/               Colab 实测 notebook
 ├── src/ai_presales_lab/     共享契约、检索和 API 适配器
 ├── scripts/                 Demo、评测、启动和压测脚本
 ├── demo/                    可选 Gradio 页面
@@ -82,7 +84,9 @@ Dify 应用的输出需要与 [`dify/output_schema.json`](dify/output_schema.jso
 
 ## llama.cpp 基础设施复现
 
-按 [`llama_cpp/README.md`](llama_cpp/README.md) 在 macOS 原生构建并启用 Metal，启动 `llama-server` 后执行：
+本项目的可比 Q4/Q8 报告优先使用 [`notebooks/llama_cpp_colab_benchmark.ipynb`](notebooks/llama_cpp_colab_benchmark.ipynb) 在 Colab GPU 中生成；完整协议见 [`docs/colab-runbook.md`](docs/colab-runbook.md)。它固定模型 revision、llama.cpp commit、上下文、采样参数、请求数和并发度，并记录 GPU/CPU 内存。
+
+本机 Apple Silicon 仍可按 [`llama_cpp/README.md`](llama_cpp/README.md) 构建并启用 Metal，启动 `llama-server` 后执行：
 
 ```bash
 PYTHONPATH=src python scripts/benchmark_llama.py \
