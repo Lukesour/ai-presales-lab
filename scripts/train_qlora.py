@@ -197,7 +197,21 @@ def main() -> int:
     train_seconds = round(time.perf_counter() - train_started, 3)
     trainer.save_model(str(trainer_output_dir))
     tokenizer.save_pretrained(str(trainer_output_dir))
-    test_metrics = {} if args.smoke_test else trainer.evaluate(dataset["test"], metric_key_prefix="test")
+    if args.smoke_test:
+        test_metrics = {}
+    else:
+        # The held-out split is still in the raw prompt/completion format here.
+        # Run it through TRL's SFT preprocessing in a separate, evaluation-only
+        # trainer before calling the Transformers evaluation loop.
+        test_metrics = _evaluate_held_out_test(
+            model=trainer.model,
+            tokenizer=tokenizer,
+            test_dataset=dataset["test"],
+            training_kwargs=training_kwargs,
+            output_dir=trainer_output_dir,
+            SFTConfig=SFTConfig,
+            SFTTrainer=SFTTrainer,
+        )
     (trainer_output_dir / "metrics.json").write_text(
         json.dumps(
             {
@@ -258,7 +272,9 @@ def _select_compute_dtype(torch, configured: str):
         return torch.float16
     if configured == "bfloat16":
         if not torch.cuda.is_bf16_supported():
-            raise ValueError("compute_dtype=bfloat16 was requested but this GPU does not support it")
+            raise ValueError(
+                "compute_dtype=bfloat16 was requested but this GPU does not support it"
+            )
         return torch.bfloat16
     if configured != "auto":
         raise ValueError("compute_dtype must be one of: auto, float16, bfloat16")
@@ -313,6 +329,90 @@ def _trainable_parameter_dtypes(model) -> dict[str, int]:
             name = str(parameter.dtype).replace("torch.", "")
             counts[name] = counts.get(name, 0) + parameter.numel()
     return counts
+
+
+def _build_test_evaluation_kwargs(
+    training_kwargs: dict[str, object], output_dir: Path
+) -> dict[str, object]:
+    """Build an evaluation-only SFTConfig from the exact training settings.
+
+    Keeping the tokenizer/template/max-length/loss settings aligned is more
+    important than reusing the original Trainer object: the original trainer
+    has already tokenized train/dev, while the held-out split is intentionally
+    kept separate until this final evaluation stage.
+    """
+
+    evaluation_kwargs = dict(training_kwargs)
+    # ``max_steps`` is only injected for the one-step smoke test. It should not
+    # accidentally constrain a real held-out evaluation if this helper is reused.
+    evaluation_kwargs.pop("max_steps", None)
+    evaluation_kwargs.update(
+        {
+            "output_dir": str(output_dir / "test-eval"),
+            "do_train": False,
+            "do_eval": True,
+            "eval_strategy": "no",
+            "save_strategy": "no",
+            "gradient_checkpointing": False,
+            "report_to": [],
+        }
+    )
+    return evaluation_kwargs
+
+
+def _evaluate_held_out_test(
+    *,
+    model,
+    tokenizer,
+    test_dataset,
+    training_kwargs: dict[str, object],
+    output_dir: Path,
+    SFTConfig,
+    SFTTrainer,
+) -> dict[str, object]:
+    """Evaluate a raw held-out split using TRL's canonical SFT preprocessing.
+
+    Passing a raw prompt/completion dataset directly to the base
+    ``Trainer.evaluate`` bypasses SFT tokenization in some TRL/Transformers
+    combinations. Constructing a second SFTTrainer makes preprocessing explicit
+    and version-robust; ``evaluate()`` then consumes the prepared dataset stored
+    on that evaluator. Some supported TRL versions require a train dataset at
+    construction time, so the held-out dataset is supplied in both slots while
+    training is explicitly disabled and never invoked.
+    """
+
+    evaluation_args = SFTConfig(**_build_test_evaluation_kwargs(training_kwargs, output_dir))
+    evaluator = SFTTrainer(
+        model=model,
+        processing_class=tokenizer,
+        # Older supported TRL releases require train_dataset during
+        # construction. This evaluator is configured with do_train=False and
+        # never calls train(), so the test split is not used for optimization.
+        train_dataset=test_dataset,
+        eval_dataset=test_dataset,
+        # The model is already wrapped by the training SFTTrainer. Passing no
+        # peft_config preserves the trained adapter instead of wrapping twice.
+        args=evaluation_args,
+    )
+    prepared_dataset = evaluator.eval_dataset
+    prepared_columns = list(getattr(prepared_dataset, "column_names", []))
+    if "input_ids" not in prepared_columns:
+        raise RuntimeError(
+            "Held-out test preprocessing did not produce input_ids; "
+            f"prepared columns: {prepared_columns}"
+        )
+    print(
+        json.dumps(
+            {
+                "test_eval_dataset_columns": prepared_columns,
+                "test_eval_examples": len(prepared_dataset),
+            },
+            ensure_ascii=False,
+        )
+    )
+    # Do not pass the raw test dataset here. The evaluator's constructor has
+    # already applied the same SFT preprocessing used for train/dev.
+    return evaluator.evaluate(metric_key_prefix="test")
 
 
 def _prepare_dataset_for_sft(dataset, tokenizer, training: dict[str, object]):

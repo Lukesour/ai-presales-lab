@@ -108,6 +108,8 @@ print(round(torch.cuda.get_device_properties(0).total_memory / 1024**3, 2), "GB"
 
 预配置 notebook 会先运行一次 `--smoke-test`：只执行一个 optimizer step，验证量化模型、LoRA 参数、dtype、Accelerate 和 bitsandbytes 的组合，再启动完整训练。训练命令的 stdout/stderr 会保存到 `data/results/colab/qlora/qlora-smoke-test.log` 和 `qlora-training.log`；失败时还会复制到 Drive 的 `failed-runs/`，避免只看到 `CalledProcessError`。
 
+训练完成后，脚本会创建一个只用于 held-out test 的 evaluation-only `SFTTrainer`。它先使用与 train/dev 相同的 tokenizer、chat template、最大长度和 completion-only loss 规则，把原始 `prompt`/`completion` 转成 `input_ids`、`labels` 等模型输入，再执行 test loss 评估。不要把 `remove_unused_columns=False` 当作修复：它只能阻止列被删除，不能把原始文本 tokenization 成模型输入。
+
 如果显存不足，使用低显存配置：
 
 ```python
@@ -175,6 +177,7 @@ base 和 adapter 必须使用同一个 `data/finetuning/test.jsonl`、相同生�
 | 训练后输出目录找不到 | 先确认 Drive 是否挂载；检查 `active-training/checkpoint-*` 和 `adapter_config.json` |
 | Hugging Face 下载超时 | 重新运行下载单元格；不要把 Token 写入 notebook。公开模型不需要 Token |
 | TRL 参数不兼容 | 重启 runtime，重新运行安装；保留 `pip-freeze.txt` 和完整错误。不要静默修改训练参数后声称可复现 |
+| `No columns in the dataset match ... prompt, completion` | 这是旧脚本把 raw held-out split 直接传给底层 `Trainer.evaluate` 的问题；从仓库拉取最新脚本，让 evaluation-only `SFTTrainer` 先完成同一套 SFT preprocessing，不要改成 `remove_unused_columns=False` |
 | Colab runtime 断开 | 重新挂载 Drive，使用最新 checkpoint 的 `--resume-from-checkpoint`；若没有 checkpoint，只能重新训练 |
 | JSON parse rate 很低 | 先检查 max_new_tokens、chat template 和 prompt/completion loss 模式，再判断是否需要增加数据或调整训练，不要直接修改 test 结果 |
 

@@ -38,6 +38,7 @@ make dataset-check
 
 实现参考：[TRL SFTTrainer 的 conversational dataset 与 assistant-only loss](https://github.com/huggingface/trl/blob/main/docs/source/sft_trainer.md)、[PEFT LoRA/QLoRA target modules](https://github.com/huggingface/peft/blob/main/docs/source/developer_guides/lora.md)、[LLaMA Factory 的 QLoRA/SFT 示例](https://github.com/hiyouga/LlamaFactory/blob/main/examples/README.md)。
 - 使用 train/dev/test，训练后在 test 上单独评估
+- test 评估使用独立的 evaluation-only `SFTTrainer`，先复用与 train/dev 相同的 prompt/completion、chat template、tokenizer、截断和 completion-only loss 预处理，再调用 `evaluate()`；不把原始 `prompt`/`completion` 列直接交给底层 `Trainer`
 - 在正式训练前先执行 one-step smoke test，验证 dtype、量化、LoRA、优化器和 Trainer 组合；完整训练失败时保留 stdout/stderr，而不是只报告子进程返回码
 
 本机没有 CUDA 时只运行 dry-run；不能把未训练的本地结果描述为 adapter 效果：
