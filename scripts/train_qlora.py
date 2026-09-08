@@ -11,7 +11,7 @@ import sys
 import time
 from pathlib import Path
 
-from ai_presales_lab.finetuning import dataset_stats, load_conversations
+from ai_presales_lab.finetuning import dataset_stats, load_conversations, sha256_file
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -39,11 +39,14 @@ def main() -> int:
         split: ROOT / config["data"][f"{split}_file"] for split in ("train", "dev", "test")
     }
     data_stats = {}
+    raw_examples = {}
     for split, path in data_paths.items():
         if not path.exists():
             print(f"Missing {path}; run make build-finetune-dataset first.")
             return 2
-        data_stats[split] = dataset_stats(load_conversations(path))
+        raw_examples[split] = load_conversations(path)
+        data_stats[split] = dataset_stats(raw_examples[split])
+    manifest_path = data_paths["train"].parent / "manifest.json"
     print(json.dumps({"dataset_stats": data_stats}, ensure_ascii=False, indent=2))
     if args.dry_run:
         print("Dry run: dataset and training configuration parsed successfully.")
@@ -103,6 +106,26 @@ def main() -> int:
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     training = config["training"]
+    token_audit = _audit_token_lengths(
+        raw_examples,
+        tokenizer,
+        max_length=int(training["max_length"]),
+    )
+    print(json.dumps({"token_length_audit": token_audit}, ensure_ascii=False, indent=2))
+    over_limit = {
+        split: stats["full_sequence"]["over_max_length"]
+        for split, stats in token_audit.items()
+        if stats["full_sequence"]["over_max_length"]
+    }
+    if over_limit:
+        message = (
+            "Some conversations exceed training.max_length and would be truncated. "
+            f"max_length={training['max_length']}, over_limit={over_limit}. "
+            "Increase max_length or compact the supervised target before claiming a quality result."
+        )
+        if training.get("fail_on_truncation", False):
+            raise ValueError(message)
+        print(f"WARNING: {message}")
     if training.get("gradient_checkpointing", False):
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     dataset, loss_kwargs, loss_mode = _prepare_dataset_for_sft(dataset, tokenizer, training)
@@ -142,6 +165,9 @@ def main() -> int:
         eval_strategy=eval_strategy,
         save_strategy=save_strategy,
         save_total_limit=2,
+        load_best_model_at_end=training.get("load_best_model_at_end", False),
+        metric_for_best_model=training.get("metric_for_best_model", "eval_loss"),
+        greater_is_better=training.get("greater_is_better", False),
         max_length=training["max_length"],
         packing=False,
         report_to=[],
@@ -157,6 +183,7 @@ def main() -> int:
                 "num_train_epochs": 1,
                 "eval_strategy": "no",
                 "save_strategy": "no",
+                "load_best_model_at_end": False,
                 "logging_steps": 1,
             }
         )
@@ -217,6 +244,12 @@ def main() -> int:
             {
                 "model_name_or_path": config["model_name_or_path"],
                 "model_revision": config.get("model_revision"),
+                "dataset_manifest": {
+                    "path": str(manifest_path),
+                    "sha256": sha256_file(manifest_path) if manifest_path.exists() else None,
+                },
+                "training_config": config["training"],
+                "token_length_audit": token_audit,
                 "train_metrics": train_output.metrics,
                 "test_metrics": test_metrics,
                 "runtime": {
@@ -243,6 +276,81 @@ def main() -> int:
 def _resolve_output_dir(value: str | Path) -> Path:
     output_dir = Path(value)
     return output_dir if output_dir.is_absolute() else ROOT / output_dir
+
+
+def _audit_token_lengths(
+    examples_by_split: dict[str, list[dict[str, object]]], tokenizer, max_length: int
+) -> dict[str, dict[str, object]]:
+    """Measure the exact chat-template lengths before TRL starts training.
+
+    A character count is not a safe proxy for a model context window. This
+    audit makes prompt/completion truncation visible in the training log and in
+    ``metrics.json``. The full sequence is the important gate because the
+    target is a structured JSON object whose closing tokens must be retained.
+    """
+
+    report: dict[str, dict[str, object]] = {}
+    for split, examples in examples_by_split.items():
+        full_lengths: list[int] = []
+        prompt_lengths: list[int] = []
+        completion_lengths: list[int] = []
+        for row in examples:
+            messages = row["messages"]
+            if not isinstance(messages, list) or not messages:
+                continue
+            full_ids = tokenizer.apply_chat_template(
+                messages,
+                tokenize=True,
+                add_generation_prompt=False,
+            )
+            prompt_ids = tokenizer.apply_chat_template(
+                messages[:-1],
+                tokenize=True,
+                add_generation_prompt=True,
+            )
+            completion = messages[-1]["content"]
+            completion_ids = tokenizer(
+                completion,
+                add_special_tokens=False,
+            )["input_ids"]
+            full_lengths.append(len(full_ids))
+            prompt_lengths.append(len(prompt_ids))
+            completion_lengths.append(len(completion_ids))
+        report[split] = {
+            "full_sequence": _length_summary(full_lengths, max_length),
+            "prompt": _length_summary(prompt_lengths, max_length),
+            "completion": _length_summary(completion_lengths, max_length),
+        }
+    return report
+
+
+def _length_summary(lengths: list[int], max_length: int) -> dict[str, object]:
+    if not lengths:
+        return {
+            "examples": 0,
+            "min": 0,
+            "p50": 0,
+            "p90": 0,
+            "max": 0,
+            "over_max_length": 0,
+            "over_max_length_rate": 0.0,
+        }
+    ordered = sorted(lengths)
+
+    def percentile(fraction: float) -> int:
+        index = min(len(ordered) - 1, round((len(ordered) - 1) * fraction))
+        return ordered[index]
+
+    over = sum(value > max_length for value in ordered)
+    return {
+        "examples": len(ordered),
+        "min": ordered[0],
+        "p50": percentile(0.50),
+        "p90": percentile(0.90),
+        "max": ordered[-1],
+        "over_max_length": over,
+        "over_max_length_rate": round(over / len(ordered), 4),
+    }
 
 
 def _runtime_metadata(torch) -> dict[str, object]:
@@ -353,6 +461,7 @@ def _build_test_evaluation_kwargs(
             "do_eval": True,
             "eval_strategy": "no",
             "save_strategy": "no",
+            "load_best_model_at_end": False,
             "gradient_checkpointing": False,
             "report_to": [],
         }

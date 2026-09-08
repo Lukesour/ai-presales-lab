@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from ai_presales_lab.finetuning import load_conversations
+from ai_presales_lab.finetuning import load_conversations, sha256_file
 from ai_presales_lab.schemas import validate_solution_dict
 from ai_presales_lab.security import inspect_output, inspect_sensitive_data
 
@@ -27,7 +27,17 @@ def main() -> int:
     parser.add_argument("--adapter", type=Path, default=None)
     parser.add_argument("--split", type=Path, default=ROOT / "data/finetuning/test.jsonl")
     parser.add_argument("--limit", type=int, default=0)
-    parser.add_argument("--max-new-tokens", type=int, default=1024)
+    parser.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=4096,
+        help="Generation budget; 4096 avoids truncating the structured presales target.",
+    )
+    parser.add_argument(
+        "--json-prefill",
+        action="store_true",
+        help="Prefill the assistant response with '{' using the chat template before generation.",
+    )
     parser.add_argument(
         "--include-output-previews",
         action="store_true",
@@ -41,6 +51,8 @@ def main() -> int:
     )
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
+    if args.max_new_tokens < 1:
+        raise ValueError("--max-new-tokens must be at least 1")
     if args.preview_chars < 1:
         raise ValueError("--preview-chars must be at least 1")
     rows = load_conversations(args.split)
@@ -152,13 +164,26 @@ def main() -> int:
     generation_config.eos_token_id = tokenizer.eos_token_id
     for row in rows:
         prompt_messages = [message for message in row["messages"] if message["role"] != "assistant"]
-        encoded = tokenizer.apply_chat_template(
-            prompt_messages,
-            tokenize=True,
-            add_generation_prompt=True,
-            return_tensors="pt",
-            return_dict=True,
-        )
+        if args.json_prefill:
+            # ``continue_final_message`` keeps the assistant turn open after
+            # the prefilled ``{``. This is input control, not post-hoc JSON
+            # repair, and is reproducible for base and adapter alike.
+            generation_messages = prompt_messages + [{"role": "assistant", "content": "{"}]
+            encoded = tokenizer.apply_chat_template(
+                generation_messages,
+                tokenize=True,
+                continue_final_message=True,
+                return_tensors="pt",
+                return_dict=True,
+            )
+        else:
+            encoded = tokenizer.apply_chat_template(
+                prompt_messages,
+                tokenize=True,
+                add_generation_prompt=True,
+                return_tensors="pt",
+                return_dict=True,
+            )
         encoded = {key: value.to(device) for key, value in encoded.items()}
         prompt_length = encoded["input_ids"].shape[-1]
         try:
@@ -176,12 +201,16 @@ def main() -> int:
         completion = tokenizer.decode(
             generated[0][prompt_length:], skip_special_tokens=True
         ).strip()
+        if args.json_prefill:
+            completion = "{" + completion
         results.append(
             _score_completion(
                 row["id"],
                 completion,
                 include_output_preview=args.include_output_previews,
                 preview_chars=args.preview_chars,
+                generation_truncated=(generated.shape[-1] - prompt_length)
+                >= args.max_new_tokens,
             )
         )
 
@@ -189,6 +218,7 @@ def main() -> int:
         "model": model_name,
         "adapter": str(args.adapter) if args.adapter else None,
         "split": str(args.split),
+        "split_sha256": sha256_file(args.split),
         "examples": len(results),
         "metrics": _summarize(results),
         "results": results,
@@ -199,6 +229,8 @@ def main() -> int:
             "device": str(device),
             "dtype": str(model_dtype).replace("torch.", ""),
             "include_output_previews": args.include_output_previews,
+            "max_new_tokens": args.max_new_tokens,
+            "json_prefill": args.json_prefill,
         },
     }
     if args.output:
@@ -287,12 +319,14 @@ def _score_completion(
     *,
     include_output_preview: bool = False,
     preview_chars: int = 800,
+    generation_truncated: bool = False,
 ) -> dict[str, Any]:
     item: dict[str, Any] = {
         "id": example_id,
         "json_parse": False,
         "schema_pass": False,
         "output_chars": len(text),
+        "generation_truncated": generation_truncated,
     }
     if include_output_preview:
         item["output_preview"] = text[:preview_chars]
@@ -303,7 +337,7 @@ def _score_completion(
         return item
     item["json_parse"] = True
     try:
-        validate_solution_dict(payload)
+        validate_solution_dict(payload, require_all_fields=True)
         item["schema_pass"] = True
     except (TypeError, ValueError) as exc:
         item["error"] = str(exc)
@@ -311,10 +345,9 @@ def _score_completion(
     sensitive_policy = inspect_sensitive_data(text)
     item["policy_pass"] = not output_policy.blocked and not sensitive_policy.blocked
     item["evidence_count"] = len(payload.get("evidence", [])) if isinstance(payload, dict) else 0
+    summary = payload.get("executive_summary", "") if isinstance(payload, dict) else ""
     item["conservative_no_evidence"] = (
-        not item["evidence_count"]
-        and isinstance(payload, dict)
-        and "资料不足" in payload.get("executive_summary", "")
+        not item["evidence_count"] and isinstance(summary, str) and "资料不足" in summary
     )
     return item
 
@@ -325,6 +358,14 @@ def _summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
     def count(field: str) -> int:
         return sum(bool(item.get(field)) for item in results)
 
+    output_lengths = sorted(int(item.get("output_chars", 0)) for item in results)
+
+    def percentile(fraction: float) -> int:
+        if not output_lengths:
+            return 0
+        index = min(len(output_lengths) - 1, round((len(output_lengths) - 1) * fraction))
+        return output_lengths[index]
+
     return {
         "total": total,
         "json_parse": count("json_parse"),
@@ -334,6 +375,13 @@ def _summarize(results: list[dict[str, Any]]) -> dict[str, Any]:
         "policy_pass": count("policy_pass"),
         "policy_pass_rate": round(count("policy_pass") / total, 4) if total else 0.0,
         "conservative_no_evidence": count("conservative_no_evidence"),
+        "generation_truncated": count("generation_truncated"),
+        "generation_truncated_rate": round(count("generation_truncated") / total, 4)
+        if total
+        else 0.0,
+        "output_chars_p50": percentile(0.50),
+        "output_chars_p90": percentile(0.90),
+        "output_chars_max": output_lengths[-1] if output_lengths else 0,
     }
 
 

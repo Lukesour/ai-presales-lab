@@ -73,6 +73,14 @@ def test_response_matches_public_contract(engine: OfflineSolutionEngine) -> None
     assert payload["case_id"] == "test-contract"
 
 
+def test_strict_response_contract_rejects_incomplete_json() -> None:
+    with pytest.raises(ValueError, match="missing required response fields"):
+        validate_solution_dict(
+            {"case_id": "case", "executive_summary": "summary"},
+            require_all_fields=True,
+        )
+
+
 def test_dify_client_requires_server_side_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("DIFY_APP_API_KEY", raising=False)
     client = DifyClient()

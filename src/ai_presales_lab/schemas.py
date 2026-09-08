@@ -7,6 +7,21 @@ from typing import Any, Literal
 
 Priority = Literal["must", "should", "nice_to_have"]
 ReviewStatus = Literal["not_required", "pending", "approved", "rejected"]
+REQUIRED_RESPONSE_FIELDS = (
+    "case_id",
+    "executive_summary",
+    "requirements",
+    "recommendation",
+    "architecture",
+    "implementation_steps",
+    "risks",
+    "clarifying_questions",
+    "evidence",
+    "poc_plan",
+    "model_strategy",
+    "assumptions",
+    "review_status",
+)
 
 
 @dataclass(frozen=True)
@@ -91,11 +106,22 @@ def _require_string(value: Any, field_name: str) -> None:
         raise ValueError(f"{field_name} must be a non-empty string")
 
 
-def validate_solution_dict(payload: dict[str, Any]) -> None:
-    """Validate the public response shape without requiring Pydantic."""
+def validate_solution_dict(
+    payload: dict[str, Any], *, require_all_fields: bool = False
+) -> None:
+    """Validate the response shape without requiring Pydantic.
+
+    The default remains backward-compatible for partial Dify error payloads.
+    Model quality gates and training targets should set ``require_all_fields``
+    so a syntactically valid but incomplete object cannot pass the schema gate.
+    """
 
     if not isinstance(payload, dict):
         raise TypeError("solution response must be an object")
+    if require_all_fields:
+        missing = [field for field in REQUIRED_RESPONSE_FIELDS if field not in payload]
+        if missing:
+            raise ValueError("missing required response fields: " + ", ".join(missing))
     for field_name in ("case_id", "executive_summary"):
         _require_string(payload.get(field_name), field_name)
     for list_field in (

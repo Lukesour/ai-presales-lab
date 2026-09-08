@@ -13,6 +13,8 @@
 
 产品事实、版本、价格、SLA、认证和实时知识仍通过 RAG 或人工审核提供，不通过微调把易变事实写死在权重里。
 
+每条 user message 还包含结构化客户约束和同一轮检索得到的 `retrieved_evidence`；assistant target 是紧凑 JSON，并移除了运行时字段。这样评测的是“RAG context → 结构化方案生成”，不会要求 adapter 凭记忆猜测 held-out 案例的产品事实。
+
 ## 数据治理
 
 - 使用 `messages` 对话格式，最后一条消息必须是 `assistant`
@@ -21,12 +23,14 @@
 - 提交前检查 PII、密钥、真实客户数据和上游许可证
 - 训练与推理使用相同的 Qwen chat template
 - conversational SFT 默认只对 assistant response 计算 loss，避免把用户问题当成监督目标
+- 训练前执行 tokenizer length audit，避免 `max_length` 静默截断 JSON 尾部
 
 生成和校验：
 
 ```bash
 make build-finetune-dataset
 make dataset-check
+make finetune-token-audit
 ```
 
 ## 训练路径

@@ -1,7 +1,7 @@
 PYTHON ?= python3
 PYTHONPATH := src
 
-.PHONY: test lint demo eval agent-eval security-check dataset-check build-finetune-dataset finetune-dry-run finetune-eval benchmark-llama summarize-benchmarks dify-check
+.PHONY: test lint demo eval agent-eval security-check dataset-check build-finetune-dataset finetune-token-audit finetune-dry-run finetune-eval benchmark-llama summarize-benchmarks dify-check
 
 test:
 	PYTHONPATH=$(PYTHONPATH) $(PYTHON) -m pytest -q
@@ -26,6 +26,9 @@ dataset-check:
 
 build-finetune-dataset:
 	PYTHONPATH=$(PYTHONPATH) $(PYTHON) scripts/build_finetune_dataset.py
+
+finetune-token-audit:
+	PYTHONPATH=$(PYTHONPATH) $(PYTHON) scripts/audit_finetune_tokens.py --max-length 5120 --strict
 
 finetune-dry-run:
 	PYTHONPATH=$(PYTHONPATH) $(PYTHON) scripts/train_qlora.py --dry-run

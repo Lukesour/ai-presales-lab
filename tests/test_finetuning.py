@@ -20,8 +20,17 @@ def test_generated_finetuning_splits_are_valid() -> None:
 
     manifest = json.loads((base / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["metadata"]["generator"] == "scripts/build_finetune_dataset.py"
+    assert manifest["metadata"]["system_prompt_version"] == "v2-json-contract-rag-context"
+    assert manifest["metadata"]["target_format"] == "compact_json"
     assert manifest["metadata"]["split_policy"].startswith("deterministic case-level")
     assert all(not Path(item["path"]).is_absolute() for item in manifest["files"].values())
+
+    sample = train[0]
+    assert '"retrieved_evidence"' in sample["messages"][-2]["content"]
+    target = json.loads(sample["messages"][-1]["content"])
+    assert "run_id" not in target
+    assert "trace_id" not in target
+    assert target["case_id"] == sample["metadata"]["case_id"]
 
 
 def test_invalid_finetuning_conversation_is_rejected() -> None:

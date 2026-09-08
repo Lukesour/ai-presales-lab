@@ -2,7 +2,11 @@ import json
 
 import pytest
 
-from scripts.evaluate_finetuned_model import _score_completion, _validate_adapter_artifact
+from scripts.evaluate_finetuned_model import (
+    _score_completion,
+    _summarize,
+    _validate_adapter_artifact,
+)
 
 
 def test_validate_adapter_artifact_requires_config_and_weights(tmp_path) -> None:
@@ -39,6 +43,7 @@ def test_score_completion_can_include_truncated_diagnostic_preview() -> None:
     assert result["error"] == "invalid_json"
     assert result["output_chars"] == len("not-json output")
     assert result["output_preview"] == "not-json"
+    assert result["generation_truncated"] is False
 
 
 def test_score_completion_keeps_preview_disabled_by_default() -> None:
@@ -46,3 +51,28 @@ def test_score_completion_keeps_preview_disabled_by_default() -> None:
 
     assert "output_preview" not in result
     assert result["output_chars"] == len("not-json output")
+
+
+def test_summary_surfaces_generation_truncation_and_output_length() -> None:
+    summary = _summarize(
+        [
+            {
+                "json_parse": False,
+                "schema_pass": False,
+                "output_chars": 100,
+                "generation_truncated": True,
+            },
+            {
+                "json_parse": True,
+                "schema_pass": True,
+                "policy_pass": True,
+                "output_chars": 200,
+                "generation_truncated": False,
+            },
+        ]
+    )
+
+    assert summary["generation_truncated"] == 1
+    assert summary["generation_truncated_rate"] == 0.5
+    assert summary["output_chars_p50"] == 100
+    assert summary["output_chars_max"] == 200

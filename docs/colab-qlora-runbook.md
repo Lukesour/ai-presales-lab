@@ -99,10 +99,15 @@ print(round(torch.cuda.get_device_properties(0).total_memory / 1024**3, 2), "GB"
 ```python
 !PYTHONPATH=src python scripts/build_finetune_dataset.py
 !PYTHONPATH=src python scripts/check_finetune_dataset.py
+!PYTHONPATH=src python scripts/audit_finetune_tokens.py \
+  --model Qwen/Qwen2.5-0.5B-Instruct \
+  --max-length 5120 \
+  --strict \
+  --output data/results/colab/qlora/token-audit.json
 !PYTHONPATH=src python scripts/train_qlora.py --dry-run
 ```
 
-预期结果：train/dev/test 为 `42/12/18`，总计 72 条；ID 唯一；manifest 中的 SHA-256 校验通过；dry-run 输出 `dataset and training configuration parsed successfully`。如果这里失败，不要继续启动正式训练。
+预期结果：train/dev/test 为 `42/12/18`，总计 72 条；ID 唯一；assistant target 全部是合法 JSON；manifest 中的 SHA-256 校验通过；dry-run 输出 `dataset and training configuration parsed successfully`。随后 token audit 会报告各 split 的 p50/p90/max 和是否超过 `max_length`。如果数据检查或 token audit 失败，不要继续启动正式训练。
 
 ### 3.4 正式训练
 
@@ -113,8 +118,8 @@ print(round(torch.cuda.get_device_properties(0).total_memory / 1024**3, 2), "GB"
 - Tesla T4 默认固定使用 `float16`；不要仅依据 `torch.cuda.is_bf16_supported()` 的探测结果在 T4 上启用 BF16。
 - Trainer 默认关闭 AMP，使用 FP32 adapter 参数和无 GradScaler 训练；量化线性层仍使用 FP16 compute。这是为 T4/当前 PyTorch 组合设置的兼容性选项，不代表全量模型使用 FP32。
 - LoRA：`r=16`、`alpha=32`、`dropout=0.05`，覆盖 Q/K/V/O、上下投影和 gate 投影。
-- 训练：3 epochs、learning rate `1e-4`、batch size 2、gradient accumulation 8、gradient checkpointing、`paged_adamw_8bit`。
-- 序列长度：2048；小显存时使用 1024。
+- 训练：5 epochs、learning rate `5e-5`、batch size 1、gradient accumulation 8（有效 batch size 8）、gradient checkpointing、`paged_adamw_8bit`；按 dev loss 选择最优 checkpoint。
+- 序列长度：默认 5120；小显存时使用 4096。训练前必须查看 token audit；配置在发现 overflow 时会直接停止，避免把结构化 JSON 的结尾截掉。
 - 评估和保存：按 epoch 执行，最多保留 2 个 checkpoint。
 
 运行：
@@ -135,7 +140,7 @@ print(round(torch.cuda.get_device_properties(0).total_memory / 1024**3, 2), "GB"
   --config configs/finetune/trl_qlora_colab_lowmem.json
 ```
 
-低显存配置将 batch size 降为 1、gradient accumulation 提高到 16、最大长度降为 1024；有效 batch size 和训练目标保持接近，不要同时随意改变多个变量。
+低显存配置保持 batch size 1、gradient accumulation 8、最大长度 4096；如果 token audit 仍提示溢出，应先缩短证据上下文或使用更大显存，而不是把截断结果当成有效质量实验。
 
 ### 3.5 中断后续跑
 
@@ -163,14 +168,16 @@ base 和 adapter 必须使用同一个 `data/finetuning/test.jsonl`、相同生�
 ```python
 !PYTHONPATH=src python scripts/evaluate_finetuned_model.py \
   --split data/finetuning/test.jsonl \
-  --max-new-tokens 1024 \
+  --max-new-tokens 4096 \
+  --json-prefill \
   --output data/results/colab/qlora/base_eval.json
 ```
 
 ```python
 !PYTHONPATH=src python scripts/evaluate_finetuned_model.py \
   --split data/finetuning/test.jsonl \
-  --max-new-tokens 1024 \
+  --max-new-tokens 4096 \
+  --json-prefill \
   --adapter /content/drive/MyDrive/ai-presales-lab-results/active-training \
   --output data/results/colab/qlora/adapter_eval.json
 ```
@@ -190,7 +197,8 @@ base 和 adapter 必须使用同一个 `data/finetuning/test.jsonl`、相同生�
   --model Qwen/Qwen2.5-0.5B-Instruct \
   --split data/finetuning/test.jsonl \
   --limit 3 \
-  --max-new-tokens 1024 \
+  --max-new-tokens 4096 \
+  --json-prefill \
   --include-output-previews \
   --preview-chars 800 \
   --output data/results/colab/qlora/base-diagnostic.json
@@ -206,7 +214,7 @@ base 和 adapter 必须使用同一个 `data/finetuning/test.jsonl`、相同生�
 | --- | --- |
 | `torch.cuda.is_available()=False` | 这不是 QLoRA 脚本错误：先执行 Runtime → Change runtime type → GPU，保存并重新连接 runtime；如果仍无法分配，免费 Colab 的 GPU 可能暂时不可用，稍后重试。若诊断中的 `cuda_runtime` 为 `null`，不要手动装 CPU 版 torch，重启 runtime 后重新运行 notebook 安装单元格 |
 | `bitsandbytes` 找不到 CUDA | 确认是 Linux NVIDIA runtime；重启 runtime 后重新安装 `finetune-colab`，不要安装 CPU 版 torch |
-| `CUDA out of memory` | 先将 `LOW_MEMORY=True` 或改用 `trl_qlora_colab_lowmem.json`；仍失败时将 max length 从 1024 降到 768，并保留日志 |
+| `CUDA out of memory` | 先将 `LOW_MEMORY=True` 或改用 `trl_qlora_colab_lowmem.json`；仍失败时优先降低 batch size，再根据 token audit 评估是否能把 max length 降到 3072；保留日志并披露截断风险 |
 | 训练后输出目录找不到 | 先确认 Drive 是否挂载；检查 `active-training/checkpoint-*` 和 `adapter_config.json` |
 | Hugging Face 下载超时 | 重新运行下载单元格；不要把 Token 写入 notebook。公开模型不需要 Token |
 | TRL 参数不兼容 | 重启 runtime，重新运行安装；保留 `pip-freeze.txt` 和完整错误。不要静默修改训练参数后声称可复现 |
@@ -216,6 +224,8 @@ base 和 adapter 必须使用同一个 `data/finetuning/test.jsonl`、相同生�
 | `Found an incompatible version of torchao` | 本项目不使用 TorchAO，通常是 Colab 预装的旧 `torchao` 被 PEFT 探测到。删除/重启 runtime，从最新版 notebook 重新运行安装单元；该单元会卸载 TorchAO。不要用 `torchao==0.10.0` 继续评估；若其他项目确实需要 TorchAO，应按当前 PyTorch 版本选择兼容版本 |
 | Colab runtime 断开 | 重新挂载 Drive，使用最新 checkpoint 的 `--resume-from-checkpoint`；若没有 checkpoint，只能重新训练 |
 | JSON parse rate 很低 | 先检查 max_new_tokens、chat template 和 prompt/completion loss 模式，再判断是否需要增加数据或调整训练，不要直接修改 test 结果 |
+| `generation_truncated` 很高 | 生成预算不足或模型没有在 EOS 结束；先使用 4096/更高预算并检查 output preview，不能把被截断的 JSON 计为 schema 通过 |
+| token audit 报 overflow | `max_length` 包含 prompt 和 assistant target；提高上下文上限或进一步压缩 target/context，重新生成 manifest 后再训练 |
 
 ## 6. 你最终应下载/保存的文件
 

@@ -13,6 +13,7 @@
 ```bash
 make build-finetune-dataset
 make dataset-check
+make finetune-token-audit
 ```
 
 当前数据来自 24 条合成客户案例，每个案例生成三个不同任务表述，结果为 72 条 ShareGPT-style 对话：
@@ -21,7 +22,9 @@ make dataset-check
 - `dev.jsonl`：12 条
 - `test.jsonl`：18 条
 
-变体按源案例分组，不能把同一个案例的变体拆到不同 split，避免数据泄漏。`manifest.json` 保存文件 hash、生成器、prompt 版本和统计信息。输出中的 `run_id`、`trace_id`、运行时延迟和模型名会被剔除，避免把一次运行的偶然字段教给模型。
+变体按源案例分组，不能把同一个案例的变体拆到不同 split，避免数据泄漏。每条 user message 同时包含请求标识、结构化客户约束和本次检索得到的证据片段；因此训练和评测是“RAG context → 结构化方案生成”，而不是让 adapter 记忆或猜测 held-out 案例的产品事实。`manifest.json` 保存文件 hash、生成器、prompt 版本、输入上下文版本和统计信息。输出中的 `run_id`、`trace_id`、运行时延迟和模型名会被剔除，避免把一次运行的偶然字段教给模型。
+
+assistant target 是紧凑 JSON：保留公开响应 schema、风险、POC、模型策略和引用字段，但压缩证据 excerpt 并移除运行时字段。数据检查脚本会在训练前验证每个 assistant target 可解析且满足 schema。
 
 合成数据只用于工程演示；真实项目应使用获得授权且脱敏的历史售前问答，并由业务专家抽检事实、引用和风险标签。
 
@@ -33,8 +36,10 @@ make dataset-check
 - 4-bit NF4、double quantization
 - LoRA rank 16、alpha 32、dropout 0.05
 - Colab Tesla T4 配置固定使用 `float16`；其他 GPU 需根据硬件能力单独记录和验证 `bfloat16`。
-- 固定 seed 42、最大长度 2048、3 epochs
+- 固定 seed 42、最大长度 5120、5 epochs、有效 batch size 8
+- learning rate `5e-5`，按 epoch 在 dev 上评估/保存，并加载 dev loss 最优 checkpoint
 - 对 conversational dataset 只对 assistant response 计算 loss
+- 训练前用 Qwen tokenizer 审计完整 chat-template 长度；配置默认在出现 overflow 时直接失败，必须先提高 `max_length` 或压缩 target，不能忽略截断
 
 实现参考：[TRL SFTTrainer 的 conversational dataset 与 assistant-only loss](https://github.com/huggingface/trl/blob/main/docs/source/sft_trainer.md)、[PEFT LoRA/QLoRA target modules](https://github.com/huggingface/peft/blob/main/docs/source/developer_guides/lora.md)、[LLaMA Factory 的 QLoRA/SFT 示例](https://github.com/hiyouga/LlamaFactory/blob/main/examples/README.md)。
 - 使用 train/dev/test，训练后在 test 上单独评估
@@ -51,7 +56,7 @@ make finetune-dry-run
 
 Colab CUDA 流程见 [`docs/colab-qlora-runbook.md`](colab-qlora-runbook.md)。
 
-推荐直接打开 [`notebooks/qlora_colab.ipynb`](../notebooks/qlora_colab.ipynb)。该 notebook 会检查 GPU、安装 `finetune-colab` extra、将 checkpoint 写入 Drive、完成 dry-run、训练、base/adapter held-out 对比和结果打包。发生 OOM 时将 notebook 中的 `LOW_MEMORY` 改为 `True`，或使用 [`configs/finetune/trl_qlora_colab_lowmem.json`](../configs/finetune/trl_qlora_colab_lowmem.json)。
+推荐直接打开 [`notebooks/qlora_colab.ipynb`](../notebooks/qlora_colab.ipynb)。该 notebook 会检查 GPU、安装 `finetune-colab` extra、重建带 RAG context 的数据、执行 tokenizer length audit、将 checkpoint 写入 Drive、完成 dry-run、训练、base/adapter held-out 对比和结果打包。发生 OOM 时将 notebook 中的 `LOW_MEMORY` 改为 `True`，或使用 [`configs/finetune/trl_qlora_colab_lowmem.json`](../configs/finetune/trl_qlora_colab_lowmem.json)。
 
 ## 训练后比较
 
@@ -63,6 +68,8 @@ Colab CUDA 流程见 [`docs/colab-qlora-runbook.md`](colab-qlora-runbook.md)。
 PYTHONPATH=src python scripts/evaluate_finetuned_model.py \
   --model Qwen/Qwen2.5-0.5B-Instruct \
   --adapter .runtime/models/qwen2.5-0.5b-presales-lora \
+  --max-new-tokens 4096 \
+  --json-prefill \
   --output data/results/qlora-test.json
 ```
 

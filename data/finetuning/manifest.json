@@ -2,20 +2,22 @@
   "files": {
     "train": {
       "path": "train.jsonl",
-      "sha256": "191db3858b51cf47cb48681946654507d472d8073ba2b09ccd70f59059073ce4"
+      "sha256": "a545cff063ed8c8d7cd90fdcc54176a82c51215e7312b4fc2052cdacc64acdbf"
     },
     "dev": {
       "path": "dev.jsonl",
-      "sha256": "d38ce42522f2d507e4b6a003e5127c922c86044d23a28a11772546f9ad88c14a"
+      "sha256": "a95529438a1824d6cf895ceb45d2105454fe28e0b03883865644f88a490172c4"
     },
     "test": {
       "path": "test.jsonl",
-      "sha256": "5f25422201a17278f6dc23697f0a6364d71d4edc4d6f11ad689c0b77287ac9e6"
+      "sha256": "0fd2321f8f832b6c03da009144165e4183cd5e46e69441f437068486bead9e63"
     }
   },
   "metadata": {
     "generator": "scripts/build_finetune_dataset.py",
-    "system_prompt_version": "v1",
+    "system_prompt_version": "v2-json-contract-rag-context",
+    "input_context_version": "v1-structured-brief-and-retrieved-evidence",
+    "target_format": "compact_json",
     "variants": 3,
     "source_cases": 24,
     "split_policy": "deterministic case-level split: test/dev/train",
@@ -28,9 +30,9 @@
           "user": 42,
           "assistant": 42
         },
-        "min_chars": 22,
-        "max_chars": 4177,
-        "avg_chars": 1299.79,
+        "min_chars": 328,
+        "max_chars": 3778,
+        "avg_chars": 1578.83,
         "ids_unique": true
       },
       "dev": {
@@ -41,9 +43,9 @@
           "user": 12,
           "assistant": 12
         },
-        "min_chars": 27,
-        "max_chars": 4009,
-        "avg_chars": 1230.64,
+        "min_chars": 328,
+        "max_chars": 3799,
+        "avg_chars": 1454.44,
         "ids_unique": true
       },
       "test": {
@@ -54,9 +56,9 @@
           "user": 18,
           "assistant": 18
         },
-        "min_chars": 32,
-        "max_chars": 4350,
-        "avg_chars": 1356.89,
+        "min_chars": 328,
+        "max_chars": 3894,
+        "avg_chars": 1629.39,
         "ids_unique": true
       }
     }

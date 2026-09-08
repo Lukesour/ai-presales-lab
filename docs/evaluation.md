@@ -4,11 +4,11 @@
 
 | 层级 | 问题 | 当前入口 |
 |---|---|---|
-| 契约 | JSON 是否可解析、字段是否完整 | `pytest`、`validate_solution_dict` |
+| 契约 | JSON 是否可解析、必需字段是否完整 | `pytest`、`validate_solution_dict(require_all_fields=True)` |
 | Agent | 节点是否完成、POC/模型策略是否存在、审核门是否触发 | `make agent-eval` |
 | 检索 | 是否有来源；无召回是否保守 | `data/evaluation/cases.jsonl` |
 | 安全 | 注入、无依据承诺、敏感数据 | `make security-check` / `scripts/run_security_checks.py` |
-| 微调 | 数据格式、重复、case-level split、hash | `make dataset-check` |
+| 微调 | 数据格式、RAG context、target schema、case-level split、hash、token overflow | `make dataset-check` / `make finetune-token-audit` |
 | 推理 | TTFT、p95、吞吐、RSS/VRAM、结构化 JSON | Colab notebook + `benchmark_llama.py` |
 
 ## 运行命令
@@ -31,7 +31,7 @@ make finetune-dry-run
 - Python 单元测试：18 passed。
 - Agent 24 条案例：24/24 完成；schema、POC、model strategy、证据/保守无证据规则和审核门均通过。
 - 红队策略用例：12/12 通过。
-- 微调数据：72 条对话，按 24 个源案例做 case-level split；train 42、dev 12、test 18，每个源案例最多 3 个变体。
+- 微调数据：72 条对话，按 24 个源案例做 case-level split；train 42、dev 12、test 18，每个源案例最多 3 个变体；输入包含结构化客户约束和检索上下文，target 为紧凑 JSON。
 
 这些数字证明的是离线契约和规则，不是模型业务准确率，也不是客户生产容量。真正的 LLM 质量报告必须另存 base/adapter、模型 revision、评测提示词、人工评分规则和完整原始输出。
 
@@ -44,3 +44,5 @@ make finetune-dry-run
 3. 无证据时不得出现产品能力、价格、SLA、认证、准确率或容量承诺。
 4. adapter 相对 base 的收益必须在保留集和对抗集上同时观察，不能只看训练 loss。
 5. 性能报告必须包含失败请求，不得删除慢请求或失败请求后再计算 p95。
+
+生成评估还记录 `generation_truncated`。如果该值较高，先增加生成预算或检查 EOS/chat template；被预算截断的 JSON 不得计入 schema 通过。
