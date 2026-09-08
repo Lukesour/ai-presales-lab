@@ -37,7 +37,7 @@ notebook 已经负责：安装 `finetune-colab` extra、保留 Colab 自带 PyTo
 
 ### 3.1 选择 GPU 并检查
 
-在 Colab 菜单中选择 GPU runtime，然后执行：
+在 Colab 菜单中选择 GPU runtime，然后执行。`nvidia-smi` 只是辅助展示命令；某些运行时可能没有将它放入 PATH，训练预检以 `torch.cuda.is_available()` 和 PyTorch 设备信息为准：
 
 ```python
 !nvidia-smi
@@ -51,6 +51,17 @@ print(torch.cuda.get_device_name(0))
 print(round(torch.cuda.get_device_properties(0).total_memory / 1024**3, 2), "GB")
 print("bf16:", torch.cuda.is_bf16_supported())
 ```
+
+如果 `!nvidia-smi` 报 `command not found`，执行下面的 PyTorch 检查：
+
+```python
+import torch
+assert torch.cuda.is_available(), "当前不是 GPU runtime，请重新选择 GPU 并连接"
+print(torch.cuda.get_device_name(0))
+print(round(torch.cuda.get_device_properties(0).total_memory / 1024**3, 2), "GB")
+```
+
+只要 PyTorch 能看到 CUDA，`nvidia-smi` 缺失本身不会阻止训练；如果 PyTorch 也看不到 CUDA，则需要重新选择 GPU runtime。
 
 免费 runtime 的 GPU 不保证固定型号；本项目默认的 Qwen2.5-0.5B 4-bit QLoRA 适合先做小规模可复现实验。不要因为分配到了更大 GPU 就直接把结果写成通用性能或生产 SLA。
 
