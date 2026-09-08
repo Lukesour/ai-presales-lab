@@ -137,7 +137,7 @@ Dify 应用的输出需要与 [`dify/output_schema.json`](dify/output_schema.jso
 make finetune-dry-run
 ```
 
-真实 QLoRA 需在 Colab CUDA 或其他兼容 GPU 上执行 [`notebooks/qlora_colab.ipynb`](notebooks/qlora_colab.ipynb)，完整步骤见 [`docs/colab-qlora-runbook.md`](docs/colab-qlora-runbook.md)。仓库不声称已产生 GPU adapter 指标，除非对应原始报告已经提交到 `data/results/`。
+真实 QLoRA 需在 Colab CUDA 或其他兼容 GPU 上执行 [`notebooks/qlora_colab.ipynb`](notebooks/qlora_colab.ipynb)。每次实验请从 [GitHub main 的固定 Colab 入口](https://colab.research.google.com/github/Lukesour/ai-presales-lab/blob/main/notebooks/qlora_colab.ipynb)打开最新版，不要使用 Colab Recent 或 Drive 旧副本；完整步骤见 [`docs/colab-qlora-runbook.md`](docs/colab-qlora-runbook.md)。仓库不声称已产生 GPU adapter 指标，除非对应原始报告已经提交到 `data/results/`。
 
 ## llama.cpp 基础设施复现
 

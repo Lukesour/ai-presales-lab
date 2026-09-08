@@ -12,30 +12,48 @@
 | 授权 Google Drive | 推荐 | notebook 默认开启，用于保存 checkpoint、adapter 和报告；不想授权可改 `USE_DRIVE=False`，但必须在结束前下载 zip |
 | 点击并运行 notebook 单元格 | 是 | 我不能代替你登录 Google、接受 Colab 资源分配或授权 Drive |
 
-如果仓库尚未公开，先在本地提交并推送代码，再把真实地址填入 notebook 的 `PROJECT_REPO_URL`。不要把 Hugging Face Token、GitHub Token、客户文档或个人隐私写进 URL、代码和 notebook 输出。
+当前项目仓库为 `https://github.com/Lukesour/ai-presales-lab.git`，需要先在本地提交并推送代码，GitHub 上的 `main` 才会成为可复现的来源。不要把 Hugging Face Token、GitHub Token、客户文档或个人隐私写进 URL、代码和 notebook 输出。
 
-## 2. 推荐路径：直接运行预配置 notebook
+## 2. 推荐路径：始终从 GitHub canonical source 打开最新版 notebook
 
-仓库已经提供 [`notebooks/qlora_colab.ipynb`](../notebooks/qlora_colab.ipynb)。打开方式：
+仓库已经提供 [`notebooks/qlora_colab.ipynb`](../notebooks/qlora_colab.ipynb)。本项目的固定入口是：
+
+[直接在 Colab 打开 GitHub main 上的最新版 QLoRA notebook](https://colab.research.google.com/github/Lukesour/ai-presales-lab/blob/main/notebooks/qlora_colab.ipynb)
+
+每次开始新实验都使用上面的链接。它会从 `Lukesour/ai-presales-lab` 的 `main` 分支加载文件；不要从 Colab 的 Recent、Google Drive 副本或浏览器旧 tab 继续运行。Colab 官方说明 notebook 可以从 GitHub 加载，但 Drive/Colab 中的副本可能是另一份独立文件。[Google Colab FAQ](https://research.google.com/colaboratory/faq.html)
+
+如果使用 Colab 菜单打开：
 
 1. 打开 Colab。
 2. 选择 File → Open notebook → GitHub。
-3. 输入你的仓库地址，选择 `notebooks/qlora_colab.ipynb`。
-4. 在第一个配置单元格只修改：
+3. 输入 `Lukesour/ai-presales-lab`，选择分支 `main`。
+4. 选择 `notebooks/qlora_colab.ipynb`。
+5. 第一个配置单元格已经绑定 canonical repository；通常只需要确认：
 
    ```python
-   PROJECT_REPO_URL = "https://github.com/<your-user>/ai-presales-lab.git"
+   PROJECT_REPO_URL = "https://github.com/Lukesour/ai-presales-lab.git"
+   PROJECT_BRANCH = "main"
    USE_DRIVE = True
    LOW_MEMORY = False
    ```
 
-5. 依次运行所有单元格，不要跳过 GPU preflight、数据检查和 dry-run。
+6. 先选择 GPU runtime，再依次运行所有单元格，不要跳过 GPU preflight、数据检查和 dry-run。
+
+notebook 会打印 `repo`、`branch` 和 `commit`。正式训练前确认它们分别是：
+
+```text
+repo: https://github.com/Lukesour/ai-presales-lab.git
+branch: main
+commit: 当前 GitHub main 的最新 commit
+```
+
+如果 notebook 报“已有错误项目目录”，说明当前 runtime 中 `/content` 残留了旧 clone。选择 Runtime → Disconnect and delete runtime，再通过上面的固定链接重新打开并连接；不要手动把旧目录改名后继续训练。
 
 notebook 已经负责：安装 `finetune-colab` extra、保留 Colab 自带 PyTorch/CUDA、检查 GPU、重建 72 条合成数据、保存 `pip-freeze` 和 runtime 元数据、把训练输出直接写入 Drive、训练后比较 base/adapter、打包结果。
 
 ## 3. 手动路径（notebook 无法打开时）
 
-### 3.1 选择 GPU 并检查
+### 3.1 先选择 GPU，再检查 runtime 是否正确
 
 在 Colab 菜单中选择 GPU runtime，然后执行。`nvidia-smi` 只是辅助展示命令；某些运行时可能没有将它放入 PATH，训练预检以 `torch.cuda.is_available()` 和 PyTorch 设备信息为准：
 
