@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import platform
 import sys
 import time
@@ -24,6 +25,11 @@ def main() -> int:
         type=Path,
         default=None,
         help="Resume from a Trainer checkpoint directory after a Colab runtime restart.",
+    )
+    parser.add_argument(
+        "--smoke-test",
+        action="store_true",
+        help="Run exactly one optimizer step to validate model, dtype, optimizer and Trainer wiring.",
     )
     args = parser.parse_args()
     config = json.loads(args.config.read_text(encoding="utf-8"))
@@ -71,14 +77,24 @@ def main() -> int:
         bnb_4bit_use_double_quant=True,
         bnb_4bit_compute_dtype=compute_dtype,
     )
+    # This experiment targets one Colab GPU. A fixed map is deterministic and
+    # avoids the multi-device training pitfalls of an inference-oriented auto map.
     model_kwargs = {
         "quantization_config": quantization,
-        "device_map": "auto",
-        "torch_dtype": compute_dtype,
+        "device_map": {"": torch.cuda.current_device()},
+        "dtype": compute_dtype,
+        "low_cpu_mem_usage": True,
     }
     if config.get("model_revision"):
         model_kwargs["revision"] = config["model_revision"]
-    model = AutoModelForCausalLM.from_pretrained(config["model_name_or_path"], **model_kwargs)
+    try:
+        model = AutoModelForCausalLM.from_pretrained(config["model_name_or_path"], **model_kwargs)
+    except TypeError as exc:
+        # Transformers versions before the ``dtype`` spelling used ``torch_dtype``.
+        if "dtype" not in str(exc):
+            raise
+        model_kwargs["torch_dtype"] = model_kwargs.pop("dtype")
+        model = AutoModelForCausalLM.from_pretrained(config["model_name_or_path"], **model_kwargs)
     model.config.use_cache = False
     tokenizer_kwargs = {}
     if config.get("model_revision"):
@@ -104,8 +120,15 @@ def main() -> int:
     trainer_precision = _resolve_trainer_precision(
         training.get("trainer_precision", "auto"), compute_dtype, torch
     )
+    # Accelerate may inherit this setting from an existing Colab config.
+    # Make the effective precision explicit for this subprocess.
+    os.environ["ACCELERATE_MIXED_PRECISION"] = (
+        "no" if trainer_precision == "fp32" else trainer_precision
+    )
+    output_dir = _resolve_output_dir(config["output_dir"])
+    trainer_output_dir = output_dir / "smoke-test" if args.smoke_test else output_dir
     training_kwargs = dict(
-        output_dir=str(_resolve_output_dir(config["output_dir"])),
+        output_dir=str(trainer_output_dir),
         num_train_epochs=training["epochs"],
         learning_rate=training["learning_rate"],
         per_device_train_batch_size=training["per_device_train_batch_size"],
@@ -127,6 +150,16 @@ def main() -> int:
         fp16=trainer_precision == "fp16",
         **loss_kwargs,
     )
+    if args.smoke_test:
+        training_kwargs.update(
+            {
+                "max_steps": 1,
+                "num_train_epochs": 1,
+                "eval_strategy": "no",
+                "save_strategy": "no",
+                "logging_steps": 1,
+            }
+        )
     if eval_strategy == "steps":
         training_kwargs["eval_steps"] = training.get("eval_steps", 25)
     if save_strategy == "steps":
@@ -162,11 +195,10 @@ def main() -> int:
     train_started = time.perf_counter()
     train_output = trainer.train(resume_from_checkpoint=resume_path)
     train_seconds = round(time.perf_counter() - train_started, 3)
-    output_dir = _resolve_output_dir(config["output_dir"])
-    trainer.save_model(str(output_dir))
-    tokenizer.save_pretrained(str(output_dir))
-    test_metrics = trainer.evaluate(dataset["test"], metric_key_prefix="test")
-    (output_dir / "metrics.json").write_text(
+    trainer.save_model(str(trainer_output_dir))
+    tokenizer.save_pretrained(str(trainer_output_dir))
+    test_metrics = {} if args.smoke_test else trainer.evaluate(dataset["test"], metric_key_prefix="test")
+    (trainer_output_dir / "metrics.json").write_text(
         json.dumps(
             {
                 "model_name_or_path": config["model_name_or_path"],
@@ -180,6 +212,7 @@ def main() -> int:
                     "train_seconds": train_seconds,
                     "peak_gpu_memory_allocated_gb": _peak_gpu_memory(torch, "allocated"),
                     "peak_gpu_memory_reserved_gb": _peak_gpu_memory(torch, "reserved"),
+                    "smoke_test": args.smoke_test,
                 },
             },
             ensure_ascii=False,
@@ -188,7 +221,7 @@ def main() -> int:
         + "\n",
         encoding="utf-8",
     )
-    print(f"Adapter saved to {output_dir}")
+    print(f"Adapter saved to {trainer_output_dir}")
     print(json.dumps({"test_metrics": test_metrics}, ensure_ascii=False, indent=2))
     return 0
 
@@ -237,9 +270,18 @@ def _select_compute_dtype(torch, configured: str):
 
 def _resolve_trainer_precision(configured: str, compute_dtype, torch) -> str:
     if configured == "auto":
+        capability = torch.cuda.get_device_capability(0)
+        # Avoid AMP/GradScaler by default on pre-Ampere cards such as T4.
+        if capability[0] < 8:
+            return "fp32"
         return "bf16" if compute_dtype == torch.bfloat16 else "fp16"
     if configured not in {"fp32", "fp16", "bf16"}:
         raise ValueError("trainer_precision must be one of: auto, fp32, fp16, bf16")
+    if configured == "fp16" and torch.cuda.get_device_capability(0)[0] < 8:
+        raise ValueError(
+            "trainer_precision=fp16 is disabled on pre-Ampere GPUs; "
+            "use trainer_precision=fp32 to avoid GradScaler dtype conflicts"
+        )
     if configured == "bf16" and not torch.cuda.is_bf16_supported():
         raise ValueError("trainer_precision=bf16 was requested but this GPU does not support it")
     return configured

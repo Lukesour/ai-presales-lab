@@ -106,6 +106,8 @@ print(round(torch.cuda.get_device_properties(0).total_memory / 1024**3, 2), "GB"
   --config configs/finetune/trl_qlora.json
 ```
 
+预配置 notebook 会先运行一次 `--smoke-test`：只执行一个 optimizer step，验证量化模型、LoRA 参数、dtype、Accelerate 和 bitsandbytes 的组合，再启动完整训练。训练命令的 stdout/stderr 会保存到 `data/results/colab/qlora/qlora-smoke-test.log` 和 `qlora-training.log`；失败时还会复制到 Drive 的 `failed-runs/`，避免只看到 `CalledProcessError`。
+
 如果显存不足，使用低显存配置：
 
 ```python
