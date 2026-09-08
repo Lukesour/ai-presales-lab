@@ -64,7 +64,7 @@ def main() -> int:
         "json",
         data_files={split: str(path) for split, path in data_paths.items()},
     )
-    compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    compute_dtype = _select_compute_dtype(torch, config.get("compute_dtype", "auto"))
     quantization = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
@@ -196,9 +196,27 @@ def _runtime_metadata(torch) -> dict[str, object]:
                 "gpu_name": torch.cuda.get_device_name(0),
                 "gpu_count": torch.cuda.device_count(),
                 "bf16_supported": bool(torch.cuda.is_bf16_supported()),
+                "compute_capability": ".".join(
+                    str(part) for part in torch.cuda.get_device_capability(0)
+                ),
             }
         )
     return metadata
+
+
+def _select_compute_dtype(torch, configured: str):
+    if configured == "float16":
+        return torch.float16
+    if configured == "bfloat16":
+        if not torch.cuda.is_bf16_supported():
+            raise ValueError("compute_dtype=bfloat16 was requested but this GPU does not support it")
+        return torch.bfloat16
+    if configured != "auto":
+        raise ValueError("compute_dtype must be one of: auto, float16, bfloat16")
+    capability = torch.cuda.get_device_capability(0)
+    if capability[0] >= 8 and torch.cuda.is_bf16_supported():
+        return torch.bfloat16
+    return torch.float16
 
 
 def _peak_gpu_memory(torch, kind: str) -> float | None:

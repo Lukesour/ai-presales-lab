@@ -81,6 +81,7 @@ print("bf16:", torch.cuda.is_bf16_supported())
 
 - 基座：`Qwen/Qwen2.5-0.5B-Instruct`。
 - 量化：4-bit NF4 + double quantization。
+- Tesla T4 默认固定使用 `float16`；不要仅依据 `torch.cuda.is_bf16_supported()` 的探测结果在 T4 上启用 BF16。
 - LoRA：`r=16`、`alpha=32`、`dropout=0.05`，覆盖 Q/K/V/O、上下投影和 gate 投影。
 - 训练：3 epochs、learning rate `1e-4`、batch size 2、gradient accumulation 8、gradient checkpointing、`paged_adamw_8bit`。
 - 序列长度：2048；小显存时使用 1024。

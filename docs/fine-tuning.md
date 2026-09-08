@@ -32,6 +32,7 @@ make dataset-check
 - 基座：`Qwen/Qwen2.5-0.5B-Instruct`
 - 4-bit NF4、double quantization
 - LoRA rank 16、alpha 32、dropout 0.05
+- Colab Tesla T4 配置固定使用 `float16`；其他 GPU 需根据硬件能力单独记录和验证 `bfloat16`。
 - 固定 seed 42、最大长度 2048、3 epochs
 - 对 conversational dataset 只对 assistant response 计算 loss
 
