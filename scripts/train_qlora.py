@@ -101,6 +101,9 @@ def main() -> int:
     )
     eval_strategy = training.get("eval_strategy", "epoch")
     save_strategy = training.get("save_strategy", "epoch")
+    trainer_precision = _resolve_trainer_precision(
+        training.get("trainer_precision", "auto"), compute_dtype, torch
+    )
     training_kwargs = dict(
         output_dir=str(_resolve_output_dir(config["output_dir"])),
         num_train_epochs=training["epochs"],
@@ -120,8 +123,8 @@ def main() -> int:
         packing=False,
         report_to=[],
         seed=training["seed"],
-        bf16=compute_dtype == torch.bfloat16,
-        fp16=compute_dtype == torch.float16,
+        bf16=trainer_precision == "bf16",
+        fp16=trainer_precision == "fp16",
         **loss_kwargs,
     )
     if eval_strategy == "steps":
@@ -136,6 +139,17 @@ def main() -> int:
         eval_dataset=dataset["dev"],
         peft_config=lora,
         args=training_args,
+    )
+    if trainer_precision == "fp32":
+        _cast_trainable_parameters(trainer.model, torch.float32)
+    print(
+        json.dumps(
+            {
+                "trainer_precision": trainer_precision,
+                "trainable_parameter_dtypes": _trainable_parameter_dtypes(trainer.model),
+            },
+            ensure_ascii=False,
+        )
     )
     resume_path = None
     if args.resume_from_checkpoint:
@@ -161,6 +175,8 @@ def main() -> int:
                 "test_metrics": test_metrics,
                 "runtime": {
                     **_runtime_metadata(torch),
+                    "compute_dtype": str(compute_dtype).replace("torch.", ""),
+                    "trainer_precision": trainer_precision,
                     "train_seconds": train_seconds,
                     "peak_gpu_memory_allocated_gb": _peak_gpu_memory(torch, "allocated"),
                     "peak_gpu_memory_reserved_gb": _peak_gpu_memory(torch, "reserved"),
@@ -219,6 +235,16 @@ def _select_compute_dtype(torch, configured: str):
     return torch.float16
 
 
+def _resolve_trainer_precision(configured: str, compute_dtype, torch) -> str:
+    if configured == "auto":
+        return "bf16" if compute_dtype == torch.bfloat16 else "fp16"
+    if configured not in {"fp32", "fp16", "bf16"}:
+        raise ValueError("trainer_precision must be one of: auto, fp32, fp16, bf16")
+    if configured == "bf16" and not torch.cuda.is_bf16_supported():
+        raise ValueError("trainer_precision=bf16 was requested but this GPU does not support it")
+    return configured
+
+
 def _peak_gpu_memory(torch, kind: str) -> float | None:
     if not torch.cuda.is_available():
         return None
@@ -228,6 +254,23 @@ def _peak_gpu_memory(torch, kind: str) -> float | None:
         else torch.cuda.max_memory_reserved()
     )
     return round(value / 1024**3, 3)
+
+
+def _cast_trainable_parameters(model, dtype) -> None:
+    """Keep adapter gradients in a GradScaler-free dtype on older NVIDIA GPUs."""
+
+    for parameter in model.parameters():
+        if parameter.requires_grad and parameter.dtype != dtype:
+            parameter.data = parameter.data.to(dtype=dtype)
+
+
+def _trainable_parameter_dtypes(model) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for parameter in model.parameters():
+        if parameter.requires_grad:
+            name = str(parameter.dtype).replace("torch.", "")
+            counts[name] = counts.get(name, 0) + parameter.numel()
+    return counts
 
 
 def _prepare_dataset_for_sft(dataset, tokenizer, training: dict[str, object]):

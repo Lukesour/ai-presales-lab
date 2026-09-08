@@ -22,6 +22,7 @@
     "gradient_accumulation_steps": 8,
     "gradient_checkpointing": true,
     "optim": "paged_adamw_8bit",
+    "trainer_precision": "fp32",
     "warmup_ratio": 0.05,
     "eval_strategy": "epoch",
     "save_strategy": "epoch",

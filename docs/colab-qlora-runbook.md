@@ -93,6 +93,7 @@ print(round(torch.cuda.get_device_properties(0).total_memory / 1024**3, 2), "GB"
 - 基座：`Qwen/Qwen2.5-0.5B-Instruct`。
 - 量化：4-bit NF4 + double quantization。
 - Tesla T4 默认固定使用 `float16`；不要仅依据 `torch.cuda.is_bf16_supported()` 的探测结果在 T4 上启用 BF16。
+- Trainer 默认关闭 AMP，使用 FP32 adapter 参数和无 GradScaler 训练；量化线性层仍使用 FP16 compute。这是为 T4/当前 PyTorch 组合设置的兼容性选项，不代表全量模型使用 FP32。
 - LoRA：`r=16`、`alpha=32`、`dropout=0.05`，覆盖 Q/K/V/O、上下投影和 gate 投影。
 - 训练：3 epochs、learning rate `1e-4`、batch size 2、gradient accumulation 8、gradient checkpointing、`paged_adamw_8bit`。
 - 序列长度：2048；小显存时使用 1024。
@@ -131,7 +132,7 @@ print(sorted(Path('/content/drive/MyDrive/ai-presales-lab-results/active-trainin
   --resume-from-checkpoint /content/drive/MyDrive/ai-presales-lab-results/active-training/checkpoint-XXX
 ```
 
-预配置 notebook 在 `USE_DRIVE=True` 时会把训练输出设到 Drive；续跑前仍需要你确认 checkpoint 路径，不能盲目使用旧 checkpoint。
+预配置 notebook 默认将训练输出写入 `/content` 本地磁盘，训练结束后再复制到 Drive，减少 Drive 挂载文件系统对 Trainer 的影响；如需跨 runtime 恢复，可将 `TRAIN_OUTPUT_ON_DRIVE=True`，续跑前仍需要你确认 checkpoint 路径，不能盲目使用旧 checkpoint。
 
 ## 4. 训练后必须做的对比评估
 
