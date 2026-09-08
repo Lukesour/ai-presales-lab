@@ -171,7 +171,7 @@ base 和 adapter 必须使用同一个 `data/finetuning/test.jsonl`、相同生�
 
 | 现象 | 处理顺序 |
 | --- | --- |
-| `CUDA unavailable` | Runtime → Change runtime type → GPU；重新运行 GPU preflight |
+| `torch.cuda.is_available()=False` | 这不是 QLoRA 脚本错误：先执行 Runtime → Change runtime type → GPU，保存并重新连接 runtime；如果仍无法分配，免费 Colab 的 GPU 可能暂时不可用，稍后重试。若诊断中的 `cuda_runtime` 为 `null`，不要手动装 CPU 版 torch，重启 runtime 后重新运行 notebook 安装单元格 |
 | `bitsandbytes` 找不到 CUDA | 确认是 Linux NVIDIA runtime；重启 runtime 后重新安装 `finetune-colab`，不要安装 CPU 版 torch |
 | `CUDA out of memory` | 先将 `LOW_MEMORY=True` 或改用 `trl_qlora_colab_lowmem.json`；仍失败时将 max length 从 1024 降到 768，并保留日志 |
 | 训练后输出目录找不到 | 先确认 Drive 是否挂载；检查 `active-training/checkpoint-*` 和 `adapter_config.json` |
