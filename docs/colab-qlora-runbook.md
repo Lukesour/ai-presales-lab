@@ -178,6 +178,8 @@ base 和 adapter 必须使用同一个 `data/finetuning/test.jsonl`、相同生�
 | Hugging Face 下载超时 | 重新运行下载单元格；不要把 Token 写入 notebook。公开模型不需要 Token |
 | TRL 参数不兼容 | 重启 runtime，重新运行安装；保留 `pip-freeze.txt` 和完整错误。不要静默修改训练参数后声称可复现 |
 | `No columns in the dataset match ... prompt, completion` | 这是旧脚本把 raw held-out split 直接传给底层 `Trainer.evaluate` 的问题；从仓库拉取最新脚本，让 evaluation-only `SFTTrainer` 先完成同一套 SFT preprocessing，不要改成 `remove_unused_columns=False` |
+| adapter 评估只显示 `CalledProcessError` | 这是 notebook 外层 subprocess 丢弃了真实 stderr；最新版会分别保存 `base-eval.log` 和 `adapter-eval.log`。先打开 adapter 日志，并检查 `adapter_config.json` 与 `adapter_model.safetensors/bin` 是否存在 |
+| `base-eval` 成功但 `adapter-eval` 失败 | 重点检查 adapter 目录是否为正式训练输出根目录、`base_model_name_or_path` 是否仍为 `Qwen/Qwen2.5-0.5B-Instruct`、PEFT 版本是否来自当前 runtime；不要把 `smoke-test/` 或 checkpoint-<step> 目录直接当作最终 adapter |
 | Colab runtime 断开 | 重新挂载 Drive，使用最新 checkpoint 的 `--resume-from-checkpoint`；若没有 checkpoint，只能重新训练 |
 | JSON parse rate 很低 | 先检查 max_new_tokens、chat template 和 prompt/completion loss 模式，再判断是否需要增加数据或调整训练，不要直接修改 test 结果 |
 

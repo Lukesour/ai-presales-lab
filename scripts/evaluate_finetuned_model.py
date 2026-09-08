@@ -13,11 +13,16 @@ from ai_presales_lab.schemas import validate_solution_dict
 from ai_presales_lab.security import inspect_output, inspect_sensitive_data
 
 ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", default="Qwen/Qwen2.5-0.5B-Instruct")
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Base model id/path. If omitted with --adapter, use the adapter config's base model.",
+    )
     parser.add_argument("--adapter", type=Path, default=None)
     parser.add_argument("--split", type=Path, default=ROOT / "data/finetuning/test.jsonl")
     parser.add_argument("--limit", type=int, default=0)
@@ -28,6 +33,26 @@ def main() -> int:
     if args.limit > 0:
         rows = rows[: args.limit]
 
+    adapter_config = None
+    if args.adapter:
+        adapter_config = _validate_adapter_artifact(args.adapter)
+    model_name = args.model or (
+        adapter_config.get("base_model_name_or_path") if adapter_config else DEFAULT_MODEL
+    )
+    if not model_name:
+        raise ValueError(
+            "Could not determine the base model. Pass --model or provide "
+            "base_model_name_or_path in adapter_config.json."
+        )
+    if adapter_config and args.model:
+        configured_base = adapter_config.get("base_model_name_or_path")
+        if configured_base and configured_base != args.model:
+            raise ValueError(
+                "The requested base model does not match the adapter metadata: "
+                f"--model={args.model!r}, adapter={configured_base!r}. "
+                "Use the original base model or intentionally regenerate the adapter."
+            )
+
     try:
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -35,17 +60,56 @@ def main() -> int:
         print(f"Evaluation dependencies are optional; install the finetune extra: {exc}")
         return 3
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
-    model = AutoModelForCausalLM.from_pretrained(args.model, device_map="auto")
+    print(f"Loading base model: {model_name}")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    model, model_dtype, model_device = _load_inference_model(
+        AutoModelForCausalLM, model_name, torch
+    )
     if args.adapter:
         try:
-            from peft import PeftModel
+            from peft import PeftConfig, PeftModel
         except ImportError as exc:
             print(f"PEFT is required to evaluate an adapter: {exc}")
             return 3
-        model = PeftModel.from_pretrained(model, str(args.adapter))
+        # Parse the config with PEFT as a second validation layer before
+        # attaching weights. This catches malformed or partial artifacts with
+        # a useful message instead of a later generate() failure.
+        peft_config = PeftConfig.from_pretrained(str(args.adapter))
+        print(
+            "Loading adapter: "
+            f"{args.adapter} (peft_type={peft_config.peft_type}, "
+            f"base={peft_config.base_model_name_or_path})"
+        )
+        model = PeftModel.from_pretrained(
+            model,
+            str(args.adapter),
+            is_trainable=False,
+        )
+        # The base model is deliberately loaded on one device for this small
+        # evaluation model. Moving once after PEFT attachment keeps base and
+        # adapter weights colocated and avoids device_map/adapter dispatch
+        # surprises during generation.
+        model = model.to(model_device)
+        if hasattr(model, "set_adapter"):
+            model.set_adapter("default")
     model.eval()
-    device = next(model.parameters()).device
+    device = _input_device(model)
+    print(
+        json.dumps(
+            {
+                "model": model_name,
+                "adapter": str(args.adapter) if args.adapter else None,
+                "device": str(device),
+                "dtype": str(model_dtype).replace("torch.", ""),
+                "examples": len(rows),
+                "pad_token_id": tokenizer.pad_token_id,
+                "eos_token_id": tokenizer.eos_token_id,
+            },
+            ensure_ascii=False,
+        )
+    )
 
     results: list[dict[str, Any]] = []
     for row in rows:
@@ -59,29 +123,119 @@ def main() -> int:
         )
         encoded = {key: value.to(device) for key, value in encoded.items()}
         prompt_length = encoded["input_ids"].shape[-1]
-        with torch.inference_mode():
-            generated = model.generate(
-                **encoded,
-                max_new_tokens=args.max_new_tokens,
-                do_sample=False,
-                pad_token_id=tokenizer.eos_token_id,
-            )
-        completion = tokenizer.decode(generated[0][prompt_length:], skip_special_tokens=True).strip()
+        try:
+            with torch.inference_mode():
+                generated = model.generate(
+                    **encoded,
+                    max_new_tokens=args.max_new_tokens,
+                    do_sample=False,
+                    pad_token_id=tokenizer.pad_token_id,
+                    eos_token_id=tokenizer.eos_token_id,
+                )
+        except Exception as exc:
+            raise RuntimeError(
+                f"Generation failed for example {row['id']!r}; "
+                f"device={device}, prompt_tokens={prompt_length}, "
+                f"adapter={args.adapter!s}"
+            ) from exc
+        completion = tokenizer.decode(
+            generated[0][prompt_length:], skip_special_tokens=True
+        ).strip()
         results.append(_score_completion(row["id"], completion))
 
     report = {
-        "model": args.model,
+        "model": model_name,
         "adapter": str(args.adapter) if args.adapter else None,
         "split": str(args.split),
         "examples": len(results),
         "metrics": _summarize(results),
         "results": results,
+        "runtime": {
+            "torch": torch.__version__,
+            "cuda_runtime": torch.version.cuda,
+            "cuda_available": bool(torch.cuda.is_available()),
+            "device": str(device),
+            "dtype": str(model_dtype).replace("torch.", ""),
+        },
     }
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        args.output.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
     print(json.dumps(report["metrics"], ensure_ascii=False, indent=2))
     return 0
+
+
+def _validate_adapter_artifact(adapter_dir: Path) -> dict[str, Any]:
+    """Validate the files required by PEFT before loading a base model."""
+
+    if not adapter_dir.exists():
+        raise FileNotFoundError(f"Adapter directory does not exist: {adapter_dir}")
+    if not adapter_dir.is_dir():
+        raise NotADirectoryError(f"Adapter path is not a directory: {adapter_dir}")
+
+    config_path = adapter_dir / "adapter_config.json"
+    if not config_path.is_file():
+        raise FileNotFoundError(
+            f"Missing {config_path}. The training output is not a complete PEFT adapter."
+        )
+    weight_files = [adapter_dir / "adapter_model.safetensors", adapter_dir / "adapter_model.bin"]
+    existing_weights = [path for path in weight_files if path.is_file()]
+    if not existing_weights:
+        raise FileNotFoundError(
+            f"Missing adapter weights in {adapter_dir}; expected adapter_model.safetensors "
+            "or adapter_model.bin."
+        )
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON in {config_path}: {exc}") from exc
+    if not isinstance(config, dict):
+        raise TypeError(f"Adapter config must be a JSON object: {config_path}")
+    config["_weight_files"] = [str(path.name) for path in existing_weights]
+    return config
+
+
+def _load_inference_model(model_class, model_name: str, torch):
+    """Load the small comparison model on one deterministic device.
+
+    ``device_map='auto'`` is useful for big-model inference, but this project
+    compares a 0.5B model on one Colab GPU. Explicit placement keeps the PEFT
+    adapter and base layers on the same device and makes input placement
+    unambiguous.
+    """
+
+    if torch.cuda.is_available():
+        device = torch.device(f"cuda:{torch.cuda.current_device()}")
+        dtype = torch.float16
+    else:
+        device = torch.device("cpu")
+        dtype = torch.float32
+    kwargs = {"dtype": dtype, "low_cpu_mem_usage": True}
+    try:
+        model = model_class.from_pretrained(model_name, **kwargs)
+    except TypeError as exc:
+        # Transformers versions before the ``dtype`` spelling use
+        # ``torch_dtype``. Keep the fallback local to inference loading.
+        if "dtype" not in str(exc):
+            raise
+        kwargs["torch_dtype"] = kwargs.pop("dtype")
+        model = model_class.from_pretrained(model_name, **kwargs)
+    model = model.to(device)
+    return model, dtype, device
+
+
+def _input_device(model):
+    """Return the device used by the input embedding layer."""
+
+    embedding = model.get_input_embeddings()
+    for parameter in embedding.parameters():
+        if parameter.device.type != "meta":
+            return parameter.device
+    raise RuntimeError(
+        "Input embedding parameters are on the meta device; model loading was incomplete."
+    )
 
 
 def _score_completion(example_id: str, text: str) -> dict[str, Any]:
