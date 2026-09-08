@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 from pathlib import Path
 from typing import Any
@@ -82,11 +83,23 @@ def main() -> int:
             f"{args.adapter} (peft_type={peft_config.peft_type}, "
             f"base={peft_config.base_model_name_or_path})"
         )
-        model = PeftModel.from_pretrained(
-            model,
-            str(args.adapter),
-            is_trainable=False,
-        )
+        try:
+            model = PeftModel.from_pretrained(
+                model,
+                str(args.adapter),
+                is_trainable=False,
+            )
+        except ImportError as exc:
+            if "incompatible version of torchao" in str(exc):
+                raise RuntimeError(
+                    "PEFT found an incompatible optional torchao installation. "
+                    "This project uses bitsandbytes NF4 and does not use torchao. "
+                    "Restart/delete the Colab runtime, rerun the notebook setup cell "
+                    "(it removes preinstalled torchao), and then rerun evaluation. "
+                    "If TorchAO is intentionally required, install a version compatible "
+                    "with the installed PyTorch instead of using the legacy package."
+                ) from exc
+            raise
         # The base model is deliberately loaded on one device for this small
         # evaluation model. Moving once after PEFT attachment keeps base and
         # adapter weights colocated and avoids device_map/adapter dispatch
@@ -112,6 +125,18 @@ def main() -> int:
     )
 
     results: list[dict[str, Any]] = []
+    generation_config = copy.deepcopy(model.generation_config)
+    # The comparison is deliberately greedy and identical for base/adapter.
+    # Normalize sampling-only fields inherited from Qwen's generation_config so
+    # Transformers does not silently ignore them when do_sample=False.
+    generation_config.do_sample = False
+    generation_config.temperature = 1.0
+    generation_config.top_p = 1.0
+    generation_config.top_k = 50
+    generation_config.num_beams = 1
+    generation_config.max_new_tokens = args.max_new_tokens
+    generation_config.pad_token_id = tokenizer.pad_token_id
+    generation_config.eos_token_id = tokenizer.eos_token_id
     for row in rows:
         prompt_messages = [message for message in row["messages"] if message["role"] != "assistant"]
         encoded = tokenizer.apply_chat_template(
@@ -127,10 +152,7 @@ def main() -> int:
             with torch.inference_mode():
                 generated = model.generate(
                     **encoded,
-                    max_new_tokens=args.max_new_tokens,
-                    do_sample=False,
-                    pad_token_id=tokenizer.pad_token_id,
-                    eos_token_id=tokenizer.eos_token_id,
+                    generation_config=generation_config,
                 )
         except Exception as exc:
             raise RuntimeError(

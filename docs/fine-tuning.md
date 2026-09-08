@@ -40,6 +40,7 @@ make dataset-check
 - 使用 train/dev/test，训练后在 test 上单独评估
 - test 评估使用独立的 evaluation-only `SFTTrainer`，先复用与 train/dev 相同的 prompt/completion、chat template、tokenizer、截断和 completion-only loss 预处理，再调用 `evaluate()`；不把原始 `prompt`/`completion` 列直接交给底层 `Trainer`
 - base/adapter 生成评估使用同一模型、同一 test split、确定性解码参数和显式单卡放置；adapter 加载前校验 `adapter_config.json` 与 `adapter_model.safetensors/bin`，并在报告中记录真实 device/dtype/runtime
+- Colab 依赖隔离：本项目的 4-bit NF4 使用 bitsandbytes；不引入 TorchAO。若 Colab 基础镜像预装旧版 TorchAO，setup 单元会先移除它，避免 PEFT 可选 dispatcher 的版本探测阻塞标准 LoRA adapter 加载
 - 在正式训练前先执行 one-step smoke test，验证 dtype、量化、LoRA、优化器和 Trainer 组合；完整训练失败时保留 stdout/stderr，而不是只报告子进程返回码
 
 本机没有 CUDA 时只运行 dry-run；不能把未训练的本地结果描述为 adapter 效果：

@@ -92,7 +92,7 @@ print(round(torch.cuda.get_device_properties(0).total_memory / 1024**3, 2), "GB"
 !python -m pip install -q -e '.[finetune-colab]'
 ```
 
-`finetune-colab` 不声明 `torch`，避免不必要地覆盖 Colab 自带的 CUDA 版 PyTorch。训练依赖包括 Transformers、TRL、PEFT、bitsandbytes、datasets 和 accelerate。QLoRA 的 4-bit NF4 配置与训练逻辑见 [Hugging Face bitsandbytes 文档](https://huggingface.co/docs/transformers/quantization/bitsandbytes) 和 [TRL SFTTrainer 文档](https://huggingface.co/docs/trl/sft_trainer)。
+`finetune-colab` 不声明 `torch`，避免不必要地覆盖 Colab 自带的 CUDA 版 PyTorch；它也不声明 `torchao`，因为本实验采用 `bitsandbytes + NF4` 的 QLoRA 路线。Colab 基础镜像若预装了旧版 `torchao`，notebook 安装单元会将这个未使用的可选后端移除，避免 PEFT 的 TorchAO dispatcher 因环境版本不兼容而阻塞普通 LoRA adapter 加载。训练依赖包括 Transformers、TRL、PEFT、bitsandbytes、datasets 和 accelerate。QLoRA 的 4-bit NF4 配置与训练逻辑见 [Hugging Face bitsandbytes 文档](https://huggingface.co/docs/transformers/quantization/bitsandbytes) 和 [TRL SFTTrainer 文档](https://huggingface.co/docs/trl/sft_trainer)。
 
 ### 3.3 构建数据、校验数据、dry-run
 
@@ -198,6 +198,7 @@ base 和 adapter 必须使用同一个 `data/finetuning/test.jsonl`、相同生�
 | `No columns in the dataset match ... prompt, completion` | 这是旧脚本把 raw held-out split 直接传给底层 `Trainer.evaluate` 的问题；从仓库拉取最新脚本，让 evaluation-only `SFTTrainer` 先完成同一套 SFT preprocessing，不要改成 `remove_unused_columns=False` |
 | adapter 评估只显示 `CalledProcessError` | 这是 notebook 外层 subprocess 丢弃了真实 stderr；最新版会分别保存 `base-eval.log` 和 `adapter-eval.log`。先打开 adapter 日志，并检查 `adapter_config.json` 与 `adapter_model.safetensors/bin` 是否存在 |
 | `base-eval` 成功但 `adapter-eval` 失败 | 重点检查 adapter 目录是否为正式训练输出根目录、`base_model_name_or_path` 是否仍为 `Qwen/Qwen2.5-0.5B-Instruct`、PEFT 版本是否来自当前 runtime；不要把 `smoke-test/` 或 checkpoint-<step> 目录直接当作最终 adapter |
+| `Found an incompatible version of torchao` | 本项目不使用 TorchAO，通常是 Colab 预装的旧 `torchao` 被 PEFT 探测到。删除/重启 runtime，从最新版 notebook 重新运行安装单元；该单元会卸载 TorchAO。不要用 `torchao==0.10.0` 继续评估；若其他项目确实需要 TorchAO，应按当前 PyTorch 版本选择兼容版本 |
 | Colab runtime 断开 | 重新挂载 Drive，使用最新 checkpoint 的 `--resume-from-checkpoint`；若没有 checkpoint，只能重新训练 |
 | JSON parse rate 很低 | 先检查 max_new_tokens、chat template 和 prompt/completion loss 模式，再判断是否需要增加数据或调整训练，不要直接修改 test 结果 |
 
