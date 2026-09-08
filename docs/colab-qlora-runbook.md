@@ -183,6 +183,21 @@ base 和 adapter 必须使用同一个 `data/finetuning/test.jsonl`、相同生�
 - `conservative_no_evidence`：证据不足时是否保守回答。
 - train/eval loss、训练时间、GPU 型号、显存峰值、是否 OOM。
 
+如果 base 和 adapter 的严格 JSON 通过率都为 0，先运行短诊断而不是立即修改指标定义。诊断只保存每个模型前 3 条、最多 800 字符的生成预览；正式报告默认不保存原始生成文本，以减少隐私泄露风险：
+
+```python
+!PYTHONPATH=src python scripts/evaluate_finetuned_model.py \
+  --model Qwen/Qwen2.5-0.5B-Instruct \
+  --split data/finetuning/test.jsonl \
+  --limit 3 \
+  --max-new-tokens 1024 \
+  --include-output-previews \
+  --preview-chars 800 \
+  --output data/results/colab/qlora/base-diagnostic.json
+```
+
+再对 adapter 执行同样的命令并增加 `--adapter`。检查 `output_preview`、`output_chars` 和 `error`：不要为了让分数变高而直接从 Markdown 或解释性文本中“抢救” JSON；正式 schema 指标仍应要求模型输出严格 JSON。
+
 不要只看训练 loss。若 adapter 在训练集上变好、held-out test 变差，说明可能过拟合；若结构化输出变好但证据或安全策略变差，也不能称为整体效果提升。
 
 ## 5. 常见问题处理

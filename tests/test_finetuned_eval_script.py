@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from scripts.evaluate_finetuned_model import _validate_adapter_artifact
+from scripts.evaluate_finetuned_model import _score_completion, _validate_adapter_artifact
 
 
 def test_validate_adapter_artifact_requires_config_and_weights(tmp_path) -> None:
@@ -25,3 +25,24 @@ def test_validate_adapter_artifact_requires_config_and_weights(tmp_path) -> None
 def test_validate_adapter_artifact_rejects_missing_directory(tmp_path) -> None:
     with pytest.raises(FileNotFoundError, match="does not exist"):
         _validate_adapter_artifact(tmp_path / "missing")
+
+
+def test_score_completion_can_include_truncated_diagnostic_preview() -> None:
+    result = _score_completion(
+        "case-001",
+        "not-json output",
+        include_output_preview=True,
+        preview_chars=8,
+    )
+
+    assert result["json_parse"] is False
+    assert result["error"] == "invalid_json"
+    assert result["output_chars"] == len("not-json output")
+    assert result["output_preview"] == "not-json"
+
+
+def test_score_completion_keeps_preview_disabled_by_default() -> None:
+    result = _score_completion("case-001", "not-json output")
+
+    assert "output_preview" not in result
+    assert result["output_chars"] == len("not-json output")

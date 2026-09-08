@@ -28,8 +28,21 @@ def main() -> int:
     parser.add_argument("--split", type=Path, default=ROOT / "data/finetuning/test.jsonl")
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--max-new-tokens", type=int, default=1024)
+    parser.add_argument(
+        "--include-output-previews",
+        action="store_true",
+        help="Include truncated generated text in the report for debugging; disabled by default for privacy.",
+    )
+    parser.add_argument(
+        "--preview-chars",
+        type=int,
+        default=800,
+        help="Maximum characters per diagnostic output preview (default: 800).",
+    )
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args()
+    if args.preview_chars < 1:
+        raise ValueError("--preview-chars must be at least 1")
     rows = load_conversations(args.split)
     if args.limit > 0:
         rows = rows[: args.limit]
@@ -163,7 +176,14 @@ def main() -> int:
         completion = tokenizer.decode(
             generated[0][prompt_length:], skip_special_tokens=True
         ).strip()
-        results.append(_score_completion(row["id"], completion))
+        results.append(
+            _score_completion(
+                row["id"],
+                completion,
+                include_output_preview=args.include_output_previews,
+                preview_chars=args.preview_chars,
+            )
+        )
 
     report = {
         "model": model_name,
@@ -178,6 +198,7 @@ def main() -> int:
             "cuda_available": bool(torch.cuda.is_available()),
             "device": str(device),
             "dtype": str(model_dtype).replace("torch.", ""),
+            "include_output_previews": args.include_output_previews,
         },
     }
     if args.output:
@@ -260,8 +281,21 @@ def _input_device(model):
     )
 
 
-def _score_completion(example_id: str, text: str) -> dict[str, Any]:
-    item: dict[str, Any] = {"id": example_id, "json_parse": False, "schema_pass": False}
+def _score_completion(
+    example_id: str,
+    text: str,
+    *,
+    include_output_preview: bool = False,
+    preview_chars: int = 800,
+) -> dict[str, Any]:
+    item: dict[str, Any] = {
+        "id": example_id,
+        "json_parse": False,
+        "schema_pass": False,
+        "output_chars": len(text),
+    }
+    if include_output_preview:
+        item["output_preview"] = text[:preview_chars]
     try:
         payload = json.loads(text)
     except json.JSONDecodeError:
