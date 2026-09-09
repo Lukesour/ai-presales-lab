@@ -1,0 +1,68 @@
+{
+  "experiment": "qlora-compact-decision-contract",
+  "source_bundle": "ai-presales-lab-results/20260909-023322",
+  "repository": {
+    "remote": "https://github.com/Lukesour/ai-presales-lab.git",
+    "commit": "095109616c99fe665d296eaab0eebe1b6bd5818b",
+    "branch": "main"
+  },
+  "dataset": {
+    "target_profile": "compact",
+    "system_prompt_version": "v1-compact-decision-contract-rag-context",
+    "manifest_sha256": "d84bb4b57e8a80aa546a1b67e7d44891de035d3ea679096920ac8a6908076d9e",
+    "source_cases": 24,
+    "train_examples": 42,
+    "dev_examples": 12,
+    "test_examples": 18,
+    "max_token_length": 813,
+    "over_max_length": 0
+  },
+  "training": {
+    "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "epochs": 5,
+    "learning_rate": 0.00005,
+    "effective_batch_size": 8,
+    "trainer_precision": "fp32",
+    "compute_dtype": "float16",
+    "train_loss": 2.2482905546824137,
+    "test_loss": 1.54835844039917,
+    "train_seconds": 147.38,
+    "gpu": "Tesla T4",
+    "torch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "peak_gpu_memory_allocated_gb": 2.18,
+    "adapter_artifact": "Drive-only; adapter weights are intentionally not committed to GitHub"
+  },
+  "evaluation": {
+    "split_sha256": "afd2a6837436e62423b44d151a0cc39baca4ac740aef2587bbef3b2d8664de7d",
+    "total": 18,
+    "generation": {
+      "max_new_tokens": 4096,
+      "json_prefill": true,
+      "generation_truncated_base": 0,
+      "generation_truncated_adapter": 0
+    },
+    "base": {
+      "json_parse_rate": 1.0,
+      "compact_schema_pass_rate": 0.0,
+      "policy_pass_rate": 0.8333
+    },
+    "adapter": {
+      "json_parse_rate": 1.0,
+      "compact_schema_pass": 14,
+      "compact_schema_pass_rate": 0.7778,
+      "policy_pass": 18,
+      "policy_pass_rate": 1.0
+    }
+  },
+  "interpretation": {
+    "result": "The compact contract materially improved structured-output behavior on the held-out synthetic split.",
+    "absolute_schema_gain": 0.7778,
+    "absolute_policy_gain": 0.1667,
+    "limitations": [
+      "The test set contains 18 synthetic examples and is not a production accuracy estimate.",
+      "compact_schema_pass_rate measures the model-facing seven-field contract, not the full public SolutionResponse schema.",
+      "The full response still requires deterministic Agent/RAG assembly, evidence binding, strict validation and human review for high-risk cases."
+    ]
+  }
+}

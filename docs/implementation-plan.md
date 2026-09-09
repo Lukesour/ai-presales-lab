@@ -37,7 +37,7 @@
 
 ### 验收
 
-本机完成 dataset-check 和 finetune-dry-run；有 CUDA 时再执行真实训练。没有 CUDA 时明确披露“尚未产生 adapter 指标”。
+本机完成 dataset-check 和 finetune-dry-run，并在 Colab Tesla T4 上完成 compact QLoRA 实测；adapter 在 18 条 held-out synthetic cases 上达到 JSON parse `100%`、compact schema `14/18`、policy pass `18/18`。完整响应仍由 Agent/RAG 组装，不能把 compact schema 指标表述成生产业务准确率。
 
 ## 第 3 周：工程化、红队、文档和面试呈现
 

@@ -28,12 +28,27 @@ make finetune-dry-run
 
 在本机依赖环境中，最近一次可复现结果为：
 
-- Python 单元测试：18 passed。
+- Python 单元测试：30 passed。
 - Agent 24 条案例：24/24 完成；schema、POC、model strategy、证据/保守无证据规则和审核门均通过。
 - 红队策略用例：12/12 通过。
 - 微调数据：72 条对话，按 24 个源案例做 case-level split；train 42、dev 12、test 18，每个源案例最多 3 个变体；输入包含结构化客户约束和检索上下文，target 为紧凑 JSON。
 
 这些数字证明的是离线契约和规则，不是模型业务准确率，也不是客户生产容量。真正的 LLM 质量报告必须另存 base/adapter、模型 revision、评测提示词、人工评分规则和完整原始输出。
+
+## Colab QLoRA 实测证据
+
+commit `095109616c99fe665d296eaab0eebe1b6bd5818b` 在 Tesla T4 上完成了 `compact` model-facing contract 实验。完整的小型摘要报告保存在 [`compact-experiment-20260909.json`](../data/results/colab/qlora/compact-experiment-20260909.json)；adapter 权重和完整运行 bundle 仅保存在 Google Drive，不提交到 GitHub。
+
+| 指标 | Base | Adapter | 口径 |
+| --- | ---: | ---: | --- |
+| JSON parse rate | 100% | 100% | 18 条 held-out synthetic test cases |
+| compact schema pass rate | 0% | 77.78%（14/18） | 仅评估 7 字段 model-facing contract |
+| policy pass rate | 83.33%（15/18） | 100%（18/18） | 输出策略与敏感信息规则 |
+| generation truncated | 0 | 0 | `max_new_tokens=4096`、JSON prefill |
+
+训练运行时为 Qwen2.5-0.5B-Instruct、5 epochs、T4、trainer fp32、compute fp16；训练约 147 秒，峰值 allocated GPU memory 约 2.18 GB。数据为 24 个合成源案例，train/dev/test=`42/12/18`，token audit 三个 split 均 `over_max_length=0`，base/adapter 使用同一 test split SHA-256。
+
+这个结果支持的结论是：把完整响应拆成“短模型决策对象 + 确定性 Agent/RAG 组装”后，结构化输出和策略通过率显著改善；它不支持“模型在真实业务上达到 77.78% 准确率”或“完整 SolutionResponse 已由模型端到端可靠生成”。
 
 ## 质量门槛建议
 

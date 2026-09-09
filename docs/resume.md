@@ -1,6 +1,6 @@
 # 简历项目素材库｜AI 售前与解决方案方向
 
-这份文档故意保留“长版本”，适合先建立完整素材库，再根据简历版面、岗位 JD 和面试官关注点删减。简历中的数字应以仓库当前评测结果为准；如果后续重新运行评测或完成真实 GPU 训练，应同步更新数字和 Disclosure。
+这份文档故意保留“长版本”，适合先建立完整素材库，再根据简历版面、岗位 JD 和面试官关注点删减。简历中的数字应以仓库当前评测结果为准；模型质量数字必须注明是合成 held-out 集、compact contract 还是完整业务响应。
 
 ## 0. 项目基本信息
 
@@ -48,7 +48,7 @@
 
 - **模型策略与部署选型：** 建立“RAG/提示词优先，只有在稳定任务模式和高质量标注数据足够时再考虑 LoRA/QLoRA”的决策逻辑；为云 API、本地 GGUF/llama.cpp、vLLM 和量化部署定义适用场景、约束与回滚路径，并明确 TTFT、p95、吞吐、CPU RSS、GPU VRAM、结构化输出通过率和成本等基准指标，避免在没有实测数据时虚构 SLA 或吞吐承诺。
 
-- **微调数据与 QLoRA 链路：** 根据 24 条源案例生成 72 条 ShareGPT-style 合成对话，按源案例进行 `train/dev/test = 42/12/18` 隔离，生成数据集统计、SHA-256 manifest、LLaMA Factory 配置、TRL/PEFT QLoRA 训练脚本和 Colab runbook；已完成数据校验与 QLoRA dry-run。当前开发机无 CUDA，尚未将“真实训练完成”或“效果提升百分比”写成项目事实。
+- **微调数据与 QLoRA 链路：** 根据 24 条源案例生成 72 条 ShareGPT-style 合成对话，按源案例进行 `train/dev/test = 42/12/18` 隔离，生成 SHA-256 manifest、LLaMA Factory 配置、TRL/PEFT QLoRA 训练脚本和 Colab runbook；在 Tesla T4 上完成 compact decision contract 实测，adapter 在 18 条 held-out synthetic cases 上达到 JSON parse `18/18`、compact schema `14/18`、policy pass `18/18`，且无生成截断。
 
 - **安全与治理：** 针对中文、英文和间接提示注入、越权承诺、过度代理、无限资源消耗、隐私信息和无依据回答设计 12 条 red-team cases，安全评测 `12/12` 通过；对输入、输出和敏感信息执行策略检查，对高风险、合规、证据不足和提示注入情形进入人工审核，并以 JSONL trace 记录可审计过程。
 
@@ -129,7 +129,7 @@
 | 安全回归 | 12 条 red-team cases，`12/12` 通过 | “覆盖注入、隐私、越权、无限消耗和无依据回答，安全回归 12/12 通过。” |
 | 数据集 | 72 条合成对话；train/dev/test 为 42/12/18；按源案例隔离；manifest/hash 有效 | “完成可追溯、按案例隔离的数据集构建和校验。” |
 | 工程验证 | `18 passed`；Ruff 通过；Docker Compose config 通过；API 集成验证通过 | “建立测试、静态检查、容器配置和 API 集成验证。” |
-| QLoRA | 训练配置、数据处理、dry-run、评估脚本和 Colab runbook 已完成；本机无 CUDA | “完成可复现训练链路和 dry-run；真实 GPU 训练作为下一阶段。” |
+| QLoRA | Colab Tesla T4 已完成 compact profile 训练；JSON parse `18/18`、schema `14/18`、policy `18/18`；完整响应仍由 Agent/RAG 组装 | “完成可复现 QLoRA 训练与 held-out 对比，并明确 compact contract 与完整业务响应的边界。” |
 
 ## 6. 不同简历长度版本
 
@@ -141,7 +141,7 @@
 - 设计 `intake/retrieve/architect/poc/model_strategy/risk_gate/finalize` 七节点 Agent，接入 4 个有边界工具、SQLite checkpoint、人工审核恢复、脱敏 trace 和 OpenAI-compatible API。
 - 基于 Dify/Gradio 搭建演示链路，将 POC 拆分为数据基线、RAG、Agent、业务验收四阶段，定义每阶段交付物和 Exit Criteria。
 - 构建 24 条黄金案例：schema 通过率 `24/24`、需求字段覆盖率 `100%`、19/24 返回有效证据、5/24 正确触发无证据保守防护；Agent 回归关键指标 `24/24` 通过。
-- 生成按源案例隔离的 72 条 ShareGPT-style 数据（train/dev/test=`42/12/18`），实现 TRL/PEFT QLoRA、LLaMA Factory 配置、manifest/hash、数据检查和评估脚本；完成 dry-run，未虚构真实 GPU 训练结果。
+- 生成按源案例隔离的 72 条 ShareGPT-style 数据（train/dev/test=`42/12/18`），实现 TRL/PEFT QLoRA、LLaMA Factory 配置、manifest/hash、数据检查和评估脚本；在 Colab Tesla T4 完成 compact profile 训练与 held-out 对比，adapter JSON parse `18/18`、compact schema `14/18`、policy `18/18`。
 - 设计 RAG-first 的模型决策矩阵，比较云 API、本地 GGUF/llama.cpp、vLLM 和 QLoRA；覆盖注入、隐私、越权和无限消耗的 12 条安全回归全部通过，并以 Docker/CI/文档完成交付。
 
 ### 6.2 三条精简版（适合项目空间很小的简历）
@@ -150,7 +150,7 @@
 
 - 面向制造业设备运维，独立完成需求结构化、方案架构、POC 四阶段验收和云端/本地/量化部署选型，形成可演示、可评测、可审计的解决方案闭环。
 - 设计七节点 Agent、4 个边界工具、SQLite checkpoint、人工审核恢复和 OpenAI-compatible API；24 条 Agent 回归案例关键交付与风险门 `24/24` 通过。
-- 构建 24 条黄金案例和 72 条隔离数据集，完成 TRL/PEFT QLoRA 与 LLaMA Factory 训练链路；12 条安全 red-team cases `12/12` 通过，本机仅完成 dry-run，真实训练待 GPU 环境。
+- 构建 24 条黄金案例和 72 条隔离数据集，完成 TRL/PEFT QLoRA 与 LLaMA Factory 训练链路；在 Tesla T4 上对 compact decision contract 完成 held-out 对比，adapter JSON parse `18/18`、schema `14/18`、policy `18/18`；12 条安全 red-team cases `12/12` 通过。
 
 ### 6.3 一句话版
 
@@ -185,7 +185,7 @@
 
 ### 30 秒版本
 
-这是我为 AI 售前/解决方案岗位做的端到端作品集。场景是制造业设备运维，我没有只做一个聊天 Demo，而是把客户需求澄清、RAG 检索、Agent 方案生成、POC 验收、模型/部署选型和风险审核串成一个可运行流程。项目包含 Dify 演示、Python Agent、QLoRA 数据和训练链路、Docker/API 以及评测体系；目前 Agent 24/24 回归通过，安全案例 12/12 通过，真实 GPU 微调部分我保留了可复现入口并明确标注为待执行。
+这是我为 AI 售前/解决方案岗位做的端到端作品集。场景是制造业设备运维，我没有只做一个聊天 Demo，而是把客户需求澄清、RAG 检索、Agent 方案生成、POC 验收、模型/部署选型和风险审核串成一个可运行流程。项目包含 Dify 演示、Python Agent、QLoRA 数据和训练链路、Docker/API 以及评测体系；Agent 24/24 回归通过，安全案例 12/12 通过，并在 Colab Tesla T4 上完成了 compact QLoRA 实测。
 
 ### 90 秒版本
 
@@ -197,8 +197,8 @@
 2. 再讲需求澄清：用户是谁、要解决什么 KPI、有哪些数据、是否允许出域、峰值并发和验收标准是什么。
 3. 展示方案架构：Dify/Gradio 负责演示，Python Agent 负责显式流程，RAG 提供证据，审核门控制高风险输出，API/Docker 负责集成和交付。
 4. 解释技术决策：为什么先 RAG，什么条件下微调，云 API、本地 GGUF/llama.cpp 和 vLLM 如何选择。
-5. 展示验证结果：24 条 Agent 回归、12 条安全回归、18 个单元测试、72 条隔离数据集，以及 QLoRA dry-run。
-6. 主动说明边界：这是个人作品集/POC，不是客户生产上线；本机无 CUDA，因此不声称已完成真实 GPU 训练或模型效果提升。
+5. 展示验证结果：24 条 Agent 回归、12 条安全回归、30 个单元测试、72 条隔离数据集，以及 T4 QLoRA compact held-out 对比。
+6. 主动说明边界：这是个人作品集/POC，不是客户生产上线；QLoRA 指标来自 18 条合成 held-out cases，compact schema 不是完整业务准确率，生产仍需更大黄金集、结构化解码和人工审核。
 
 ## 9. 高频面试问题与建议回答
 
@@ -212,7 +212,7 @@ RAG 解决“从资料中找依据”，但售前交付还要完成需求澄清�
 
 ### Q3：你的微调真的训练完成了吗？
 
-目前没有把它包装成已完成训练。项目已完成 72 条数据的构建、源案例隔离、校验、manifest/hash、TRL/PEFT QLoRA 训练入口、LLaMA Factory 配置、评估脚本和 dry-run；当前开发机没有 CUDA，因此真实 GPU 训练和效果对比是下一步。这样可以保证简历中的结果真实，也保留了在 Colab 或 GPU 机器上复现实验的完整路径。
+完成过一次可复现的 Colab Tesla T4 实验。数据是 24 个合成源案例、train/dev/test=`42/12/18`，采用 compact decision contract，让 0.5B 模型只生成摘要、建议、风险、澄清问题、证据 ID 和审核状态；在同一 18 条 held-out split 上，adapter JSON parse 为 `18/18`、compact schema 为 `14/18`、policy pass 为 `18/18`。我不会把这些数字包装成真实业务准确率；完整 POC、模型策略和证据对象仍由 Agent/RAG 确定性组装。
 
 ### Q4：如何控制大模型幻觉？
 
@@ -238,7 +238,7 @@ RAG 解决“从资料中找依据”，但售前交付还要完成需求澄清�
 
 | 可使用的真实口径 | 不建议直接使用的口径 | 原因 |
 | --- | --- | --- |
-| “实现 QLoRA 训练脚本并完成 dry-run” | “完成大模型微调并提升准确率 30%” | 当前没有真实 GPU 训练和效果对比 |
+| “在 Colab T4 完成 compact QLoRA 训练与 held-out 对比” | “完成大模型微调并提升准确率 30%” | 当前数据为合成案例，compact schema 不是业务准确率 |
 | “定义并实现性能基准指标” | “系统稳定支持 1000 并发” | 尚未完成对应规模实测 |
 | “基于 Dify 搭建/适配演示工作流” | “自主开发 Dify 平台” | Dify 是上游开源平台 |
 | “基于 llama.cpp 完成本地部署适配和 benchmark 入口” | “自研推理引擎” | 推理引擎能力来自上游项目 |
@@ -252,7 +252,7 @@ RAG 解决“从资料中找依据”，但售前交付还要完成需求澄清�
 - 如果岗位偏售前，把“需求澄清、价值、POC、验收、客户沟通、方案文档”放在技术名词之前。
 - 如果岗位偏解决方案工程，把 Agent 状态、工具边界、API、Docker、CI、评测和故障处理放前面。
 - 如果 JD 提到私有化部署，把本地 GGUF/llama.cpp、vLLM、数据不出域、资源估算和回滚策略展开。
-- 如果 JD 提到模型训练，把 QLoRA 数据治理、case-level split、manifest、dry-run、held-out 评估和 GPU 训练计划展开。
+- 如果 JD 提到模型训练，把 QLoRA 数据治理、case-level split、manifest、T4 实测、held-out 评估和 compact/full contract 边界展开。
 - 只保留自己能在 1–3 分钟内解释清楚的技术名词；技术栈过长时优先保留 `Agent、RAG、Dify、POC、QLoRA、Python、Docker、评测`。
 - 简历中所有百分比、并发、延迟、成本和效果提升都必须能指向评测脚本、结果文件或实测记录。
 - 面试前准备一次从需求输入到最终方案的完整 Demo，并准备无证据、高风险和人工审核三个失败分支。
@@ -265,9 +265,9 @@ RAG 解决“从资料中找依据”，但售前交付还要完成需求澄清�
 
 - Designed an end-to-end AI presales workflow for manufacturing equipment maintenance, covering requirement clarification, evidence-grounded RAG, solution architecture, four-phase POC acceptance, model strategy and deployment selection.
 - Implemented a seven-node stateful Agent with bounded tools, SQLite checkpointing, human approval/rejection and resume, redacted JSONL traces and an OpenAI-compatible API; 24/24 Agent regression cases passed schema, delivery and review-gate checks.
-- Built 24 golden cases and 72 case-isolated ShareGPT-style samples (`train/dev/test = 42/12/18`), with TRL/PEFT QLoRA and LLaMA Factory training configurations, dataset manifests and validation scripts; completed a dry-run, while real GPU training remains a next step because the development machine has no CUDA.
+- Built 24 golden cases and 72 case-isolated ShareGPT-style samples (`train/dev/test = 42/12/18`), with TRL/PEFT QLoRA and LLaMA Factory training configurations, dataset manifests and validation scripts; on a Colab Tesla T4, the compact adapter achieved 100% JSON parse, 14/18 compact-schema pass and 18/18 policy pass on the held-out synthetic split.
 - Defined a RAG-first model decision matrix across cloud APIs, local GGUF/llama.cpp, vLLM and parameter-efficient fine-tuning; 12/12 red-team security cases passed for prompt injection, privacy, excessive agency, unbounded consumption and unsupported claims.
 
 ## 13. 项目事实披露
 
-面试中建议主动说明：这是面向求职展示的个人端到端 POC/作品集，不是客户生产上线项目。Dify、llama.cpp、LangGraph、TRL/PEFT、LLaMA Factory、vLLM 和 Promptfoo 的基础能力来自上游开源项目；个人工作集中在制造业售前场景抽象、需求与输出契约、Agent 编排、工具边界、POC 验收、模型/部署决策、数据治理、评测、安全规则、适配器、部署脚本和结果分析。当前已验证的是离线案例、规则和工程链路；QLoRA 真实 GPU 训练、真实业务数据效果、生产级容量和客户 KPI 均不应在没有证据时写成已完成事实。
+面试中建议主动说明：这是面向求职展示的个人端到端 POC/作品集，不是客户生产上线项目。Dify、llama.cpp、LangGraph、TRL/PEFT、LLaMA Factory、vLLM 和 Promptfoo 的基础能力来自上游开源项目；个人工作集中在制造业售前场景抽象、需求与输出契约、Agent 编排、工具边界、POC 验收、模型/部署决策、数据治理、评测、安全规则、适配器、部署脚本和结果分析。当前已验证的是合成案例、规则、T4 QLoRA compact contract 和工程链路；真实业务数据效果、生产级容量和客户 KPI 均不应写成已完成事实。

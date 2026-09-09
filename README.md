@@ -137,7 +137,7 @@ Dify 应用的输出需要与 [`dify/output_schema.json`](dify/output_schema.jso
 make finetune-dry-run
 ```
 
-真实 QLoRA 需在 Colab CUDA 或其他兼容 GPU 上执行 [`notebooks/qlora_colab.ipynb`](notebooks/qlora_colab.ipynb)。每次实验请从 [GitHub main 的固定 Colab 入口](https://colab.research.google.com/github/Lukesour/ai-presales-lab/blob/main/notebooks/qlora_colab.ipynb)打开最新版，不要使用 Colab Recent 或 Drive 旧副本；完整步骤见 [`docs/colab-qlora-runbook.md`](docs/colab-qlora-runbook.md)。仓库不声称已产生 GPU adapter 指标，除非对应原始报告已经提交到 `data/results/`。
+真实 QLoRA 已在 Colab Tesla T4 上完成一次 `compact` model-facing contract 实验；可从 [GitHub main 的固定 Colab 入口](https://colab.research.google.com/github/Lukesour/ai-presales-lab/blob/main/notebooks/qlora_colab.ipynb)复现，不要使用 Colab Recent 或 Drive 旧副本。该实验在 18 条 held-out synthetic test cases 上得到 JSON parse `100%`、compact schema `14/18`、policy pass `18/18`；完整口径见 [`docs/fine-tuning.md`](docs/fine-tuning.md) 和 [`data/results/colab/qlora/compact-experiment-20260909.json`](data/results/colab/qlora/compact-experiment-20260909.json)。adapter 权重不提交 GitHub。
 
 ## llama.cpp 基础设施复现
 
@@ -178,7 +178,7 @@ flowchart LR
 
 ## 当前证据与诚实披露
 
-最近一次本机离线验证：18 项测试通过；24 条 Agent 案例完成并通过 schema/POC/模型策略/证据规则/审核门；红队 12/12；微调数据 train/dev/test 为 42/12/18。详细口径见 [`docs/evaluation.md`](docs/evaluation.md)。这些是工程契约结果，不是生产准确率、SLA 或容量。
+最近一次本机离线验证：30 项测试通过；24 条 Agent 案例完成并通过 schema/POC/模型策略/证据规则/审核门；红队 12/12；微调数据 train/dev/test 为 42/12/18。另有一次 Colab T4 QLoRA compact 实测：JSON parse `18/18`、compact schema `14/18`、policy pass `18/18`。详细口径见 [`docs/evaluation.md`](docs/evaluation.md)。这些是合成案例和工程评测结果，不是生产准确率、SLA 或容量。
 
 本仓库基于 Dify、llama.cpp 和 Hugging Face 生态的公开能力构建个人演示。简历只描述自己编写的适配器、数据、工作流、评测和部署工作，不把上游功能写成从零开发。所有性能和质量数字以 `data/results/` 中实际生成的报告为准。
 

@@ -96,6 +96,14 @@ PYTHONPATH=src python scripts/evaluate_finetuned_model.py \
 
 脚本只统计 JSON 解析、schema 通过、策略检查和无证据保守输出，不把字符串相似度当成业务质量。
 
+### 已完成的 Colab compact 实验
+
+commit `095109616c99fe665d296eaab0eebe1b6bd5818b` 已在 Tesla T4 上完成一次可复现训练。实验使用 Qwen2.5-0.5B-Instruct、5 epochs、learning rate `5e-5`、trainer fp32、compute fp16，训练耗时约 147 秒；adapter 权重保存在 Drive，不进入 GitHub。
+
+在同一个 18 条 held-out synthetic test split 上，base 与 adapter 均为 JSON parse `100%`，没有 generation truncation；adapter 的 compact schema pass 为 `14/18 = 77.78%`，base 为 `0/18`；policy pass 从 base 的 `15/18 = 83.33%` 提升到 adapter 的 `18/18 = 100%`。该 schema 只覆盖七字段 model-facing contract，不等于完整 `SolutionResponse` 的端到端业务准确率。
+
+详细摘要见 [`data/results/colab/qlora/compact-experiment-20260909.json`](../data/results/colab/qlora/compact-experiment-20260909.json)。后续生产路径仍需对 compact 输出执行 evidence ID 绑定、完整 schema 校验、失败重试/人工审核和对抗集回归。
+
 | 对比 | 目的 |
 |---|---|
 | base vs adapter | 看结构化输出、风险分类和工具参数是否改善 |
