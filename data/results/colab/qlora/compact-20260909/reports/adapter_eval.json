@@ -1,0 +1,219 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "adapter": "/content/ai-presales-qlora/ai-presales-lab/.runtime/models/qwen2.5-0.5b-presales-compact-lora",
+  "split": "data/finetuning/test.jsonl",
+  "split_sha256": "afd2a6837436e62423b44d151a0cc39baca4ac740aef2587bbef3b2d8664de7d",
+  "examples": 18,
+  "metrics": {
+    "total": 18,
+    "json_parse": 18,
+    "json_parse_rate": 1.0,
+    "schema_pass": 14,
+    "schema_pass_rate": 0.7778,
+    "policy_pass": 18,
+    "policy_pass_rate": 1.0,
+    "conservative_no_evidence": 0,
+    "generation_truncated": 0,
+    "generation_truncated_rate": 0.0,
+    "output_chars_p50": 277,
+    "output_chars_p90": 318,
+    "output_chars_max": 398
+  },
+  "results": [
+    {
+      "id": "case-004-v1",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 290,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 2,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-004-v2",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 299,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 2,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-004-v3",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 277,
+      "generation_truncated": false,
+      "error": "missing required compact response fields: review_status",
+      "policy_pass": true,
+      "evidence_count": 2,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-008-v1",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 286,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 3,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-008-v2",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 318,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 3,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-008-v3",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 250,
+      "generation_truncated": false,
+      "error": "missing required compact response fields: review_status",
+      "policy_pass": true,
+      "evidence_count": 3,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-014-v1",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 94,
+      "generation_truncated": false,
+      "error": "missing required compact response fields: recommendation, risk_flags, clarifying_questions, evidence_ids, review_status",
+      "policy_pass": true,
+      "evidence_count": 0,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-014-v2",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 398,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 2,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-014-v3",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 318,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 3,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-019-v1",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 290,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 1,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-019-v2",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 255,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 1,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-019-v3",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 282,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 1,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-020-v1",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 225,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 3,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-020-v2",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 277,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 3,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-020-v3",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 340,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 3,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-023-v1",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 251,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 2,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-023-v2",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 112,
+      "generation_truncated": false,
+      "error": "missing required compact response fields: recommendation, risk_flags, clarifying_questions, evidence_ids, review_status",
+      "policy_pass": true,
+      "evidence_count": 0,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-023-v3",
+      "json_parse": true,
+      "schema_pass": true,
+      "output_chars": 211,
+      "generation_truncated": false,
+      "policy_pass": true,
+      "evidence_count": 2,
+      "conservative_no_evidence": false
+    }
+  ],
+  "runtime": {
+    "torch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_available": true,
+    "device": "cuda:0",
+    "dtype": "float16",
+    "include_output_previews": false,
+    "max_new_tokens": 4096,
+    "json_prefill": true,
+    "contract_profile": "compact"
+  }
+}

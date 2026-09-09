@@ -1,0 +1,67 @@
+{
+  "files": {
+    "train": {
+      "path": "train.jsonl",
+      "sha256": "9b829d522fbc97e16e6a38f48c5f42aba812c7e475c5311ca702e12c0185ef6c"
+    },
+    "dev": {
+      "path": "dev.jsonl",
+      "sha256": "7417ce3fe2ae3946c5cbd24d4309f222c62a5491e39ab4cbf9777bd79d72c51d"
+    },
+    "test": {
+      "path": "test.jsonl",
+      "sha256": "afd2a6837436e62423b44d151a0cc39baca4ac740aef2587bbef3b2d8664de7d"
+    }
+  },
+  "metadata": {
+    "generator": "scripts/build_finetune_dataset.py",
+    "system_prompt_version": "v1-compact-decision-contract-rag-context",
+    "input_context_version": "v1-structured-brief-and-retrieved-evidence",
+    "target_format": "compact_json",
+    "target_profile": "compact",
+    "variants": 3,
+    "source_cases": 24,
+    "split_policy": "deterministic case-level split: test/dev/train",
+    "stats": {
+      "train": {
+        "examples": 42,
+        "messages": 126,
+        "role_counts": {
+          "system": 42,
+          "user": 42,
+          "assistant": 42
+        },
+        "min_chars": 357,
+        "max_chars": 1067,
+        "avg_chars": 544.02,
+        "ids_unique": true
+      },
+      "dev": {
+        "examples": 12,
+        "messages": 36,
+        "role_counts": {
+          "system": 12,
+          "user": 12,
+          "assistant": 12
+        },
+        "min_chars": 348,
+        "max_chars": 1065,
+        "avg_chars": 488.28,
+        "ids_unique": true
+      },
+      "test": {
+        "examples": 18,
+        "messages": 54,
+        "role_counts": {
+          "system": 18,
+          "user": 18,
+          "assistant": 18
+        },
+        "min_chars": 357,
+        "max_chars": 1099,
+        "avg_chars": 572.94,
+        "ids_unique": true
+      }
+    }
+  }
+}

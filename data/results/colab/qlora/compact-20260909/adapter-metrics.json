@@ -1,0 +1,149 @@
+{
+  "model_name_or_path": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": null,
+  "dataset_manifest": {
+    "path": "/content/ai-presales-qlora/ai-presales-lab/data/finetuning/manifest.json",
+    "sha256": "d84bb4b57e8a80aa546a1b67e7d44891de035d3ea679096920ac8a6908076d9e"
+  },
+  "training_config": {
+    "epochs": 5,
+    "learning_rate": 5e-05,
+    "per_device_train_batch_size": 1,
+    "per_device_eval_batch_size": 1,
+    "gradient_accumulation_steps": 8,
+    "gradient_checkpointing": true,
+    "optim": "paged_adamw_8bit",
+    "trainer_precision": "fp32",
+    "warmup_ratio": 0.05,
+    "eval_strategy": "epoch",
+    "save_strategy": "epoch",
+    "logging_steps": 5,
+    "max_length": 5120,
+    "fail_on_truncation": true,
+    "assistant_only_loss": true,
+    "load_best_model_at_end": true,
+    "metric_for_best_model": "eval_loss",
+    "greater_is_better": false,
+    "seed": 42
+  },
+  "token_length_audit": {
+    "train": {
+      "full_sequence": {
+        "examples": 42,
+        "min": 509,
+        "p50": 670,
+        "p90": 776,
+        "max": 785,
+        "over_max_length": 0,
+        "over_max_length_rate": 0.0
+      },
+      "prompt": {
+        "examples": 42,
+        "min": 270,
+        "p50": 484,
+        "p90": 580,
+        "max": 586,
+        "over_max_length": 0,
+        "over_max_length_rate": 0.0
+      },
+      "completion": {
+        "examples": 42,
+        "min": 174,
+        "p50": 189,
+        "p90": 237,
+        "max": 288,
+        "over_max_length": 0,
+        "over_max_length_rate": 0.0
+      }
+    },
+    "dev": {
+      "full_sequence": {
+        "examples": 12,
+        "min": 495,
+        "p50": 651,
+        "p90": 784,
+        "max": 786,
+        "over_max_length": 0,
+        "over_max_length_rate": 0.0
+      },
+      "prompt": {
+        "examples": 12,
+        "min": 275,
+        "p50": 378,
+        "p90": 577,
+        "max": 579,
+        "over_max_length": 0,
+        "over_max_length_rate": 0.0
+      },
+      "completion": {
+        "examples": 12,
+        "min": 150,
+        "p50": 218,
+        "p90": 289,
+        "max": 289,
+        "over_max_length": 0,
+        "over_max_length_rate": 0.0
+      }
+    },
+    "test": {
+      "full_sequence": {
+        "examples": 18,
+        "min": 640,
+        "p50": 696,
+        "p90": 810,
+        "max": 813,
+        "over_max_length": 0,
+        "over_max_length_rate": 0.0
+      },
+      "prompt": {
+        "examples": 18,
+        "min": 350,
+        "p50": 478,
+        "p90": 583,
+        "max": 586,
+        "over_max_length": 0,
+        "over_max_length_rate": 0.0
+      },
+      "completion": {
+        "examples": 18,
+        "min": 165,
+        "p50": 199,
+        "p90": 288,
+        "max": 288,
+        "over_max_length": 0,
+        "over_max_length_rate": 0.0
+      }
+    }
+  },
+  "train_metrics": {
+    "train_runtime": 146.8822,
+    "train_samples_per_second": 1.43,
+    "train_steps_per_second": 0.204,
+    "total_flos": 317012635603200.0,
+    "train_loss": 2.2482905546824137
+  },
+  "test_metrics": {
+    "test_loss": 1.54835844039917,
+    "test_model_preparation_time": 0.0,
+    "test_runtime": 4.7405,
+    "test_samples_per_second": 3.797,
+    "test_steps_per_second": 3.797
+  },
+  "runtime": {
+    "python": "3.13.15",
+    "platform": "Linux-6.6.122+-x86_64-with-glibc2.35",
+    "torch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_available": true,
+    "gpu_name": "Tesla T4",
+    "gpu_count": 1,
+    "bf16_supported": true,
+    "compute_capability": "7.5",
+    "compute_dtype": "float16",
+    "trainer_precision": "fp32",
+    "train_seconds": 147.38,
+    "peak_gpu_memory_allocated_gb": 2.18,
+    "peak_gpu_memory_reserved_gb": 5.564,
+    "smoke_test": false
+  }
+}

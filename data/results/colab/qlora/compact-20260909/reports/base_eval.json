@@ -1,0 +1,233 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "adapter": null,
+  "split": "data/finetuning/test.jsonl",
+  "split_sha256": "afd2a6837436e62423b44d151a0cc39baca4ac740aef2587bbef3b2d8664de7d",
+  "examples": 18,
+  "metrics": {
+    "total": 18,
+    "json_parse": 18,
+    "json_parse_rate": 1.0,
+    "schema_pass": 0,
+    "schema_pass_rate": 0.0,
+    "policy_pass": 15,
+    "policy_pass_rate": 0.8333,
+    "conservative_no_evidence": 0,
+    "generation_truncated": 0,
+    "generation_truncated_rate": 0.0,
+    "output_chars_p50": 286,
+    "output_chars_p90": 402,
+    "output_chars_max": 443
+  },
+  "results": [
+    {
+      "id": "case-004-v1",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 249,
+      "generation_truncated": false,
+      "error": "missing required compact response fields: review_status",
+      "policy_pass": true,
+      "evidence_count": 2,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-004-v2",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 247,
+      "generation_truncated": false,
+      "error": "missing required compact response fields: review_status",
+      "policy_pass": true,
+      "evidence_count": 14,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-004-v3",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 294,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": true,
+      "evidence_count": 14,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-008-v1",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 286,
+      "generation_truncated": false,
+      "error": "missing required compact response fields: review_status",
+      "policy_pass": true,
+      "evidence_count": 3,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-008-v2",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 402,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": true,
+      "evidence_count": 22,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-008-v3",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 443,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": true,
+      "evidence_count": 3,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-014-v1",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 322,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": true,
+      "evidence_count": 3,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-014-v2",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 286,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": true,
+      "evidence_count": 22,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-014-v3",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 410,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": true,
+      "evidence_count": 22,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-019-v1",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 258,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": true,
+      "evidence_count": 1,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-019-v2",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 275,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": true,
+      "evidence_count": 6,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-019-v3",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 170,
+      "generation_truncated": false,
+      "error": "missing required compact response fields: clarifying_questions, evidence_ids, review_status",
+      "policy_pass": true,
+      "evidence_count": 0,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-020-v1",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 319,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": true,
+      "evidence_count": 3,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-020-v2",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 340,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": true,
+      "evidence_count": 22,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-020-v3",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 275,
+      "generation_truncated": false,
+      "error": "missing required compact response fields: review_status",
+      "policy_pass": true,
+      "evidence_count": 22,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-023-v1",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 360,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": false,
+      "evidence_count": 14,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-023-v2",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 377,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": false,
+      "evidence_count": 14,
+      "conservative_no_evidence": false
+    },
+    {
+      "id": "case-023-v3",
+      "json_parse": true,
+      "schema_pass": false,
+      "output_chars": 276,
+      "generation_truncated": false,
+      "error": "recommendation must be an array",
+      "policy_pass": false,
+      "evidence_count": 14,
+      "conservative_no_evidence": false
+    }
+  ],
+  "runtime": {
+    "torch": "2.11.0+cu128",
+    "cuda_runtime": "12.8",
+    "cuda_available": true,
+    "device": "cuda:0",
+    "dtype": "float16",
+    "include_output_previews": false,
+    "max_new_tokens": 4096,
+    "json_prefill": true,
+    "contract_profile": "compact"
+  }
+}

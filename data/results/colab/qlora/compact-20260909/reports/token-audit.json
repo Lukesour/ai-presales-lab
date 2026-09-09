@@ -1,0 +1,33 @@
+{
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "max_length": 5120,
+  "splits": {
+    "train": {
+      "examples": 42,
+      "min": 509,
+      "p50": 670,
+      "p90": 776,
+      "max": 785,
+      "over_max_length": 0,
+      "over_max_length_rate": 0.0
+    },
+    "dev": {
+      "examples": 12,
+      "min": 495,
+      "p50": 651,
+      "p90": 784,
+      "max": 786,
+      "over_max_length": 0,
+      "over_max_length_rate": 0.0
+    },
+    "test": {
+      "examples": 18,
+      "min": 640,
+      "p50": 696,
+      "p90": 810,
+      "max": 813,
+      "over_max_length": 0,
+      "over_max_length_rate": 0.0
+    }
+  }
+}

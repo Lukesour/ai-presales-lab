@@ -1,0 +1,13 @@
+{
+  "timestamp_utc": "2026-09-09T02:25:14.702761+00:00",
+  "repo": "https://github.com/Lukesour/ai-presales-lab.git",
+  "branch": "main",
+  "git_commit": "095109616c99fe665d296eaab0eebe1b6bd5818b",
+  "python": "3.13.15 (main, Aug  6 2026, 11:06:23) [GCC 11.4.0]",
+  "platform": "Linux-6.6.122+-x86_64-with-glibc2.35",
+  "torch": "2.11.0+cu128",
+  "cuda_runtime": "12.8",
+  "gpu": "Tesla T4",
+  "gpu_memory_gb": 14.56,
+  "bf16_supported": true
+}
