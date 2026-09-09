@@ -11,7 +11,7 @@
 - SQLite checkpoint、人审 `approve/reject` 恢复、run/trace/thread 可观测记录
 - Dify 工作流/API 适配、OpenAI-compatible 本地 Agent API 和 Gradio 三种演示模式
 - RAG-first 的模型决策：云 API、llama.cpp/GGUF、本地轻量服务和 vLLM GPU 路径
-- 可复现的合成微调数据、case-level split、manifest/hash、TRL+PEFT QLoRA 和 LLaMA Factory 配置
+- 可复现的合成微调数据、case-level split、manifest/hash、TRL+PEFT QLoRA 和 LLaMA Factory 配置；默认 compact decision contract 让小模型只学习稳定格式/风险/决策行为，完整 POC 与模型策略仍由确定性 Agent 和 RAG 负责
 - Prompt injection、无依据承诺、敏感信息和过度代理红队检查
 - llama.cpp OpenAI-compatible 客户端、SSE 首 Token 和并发基准；Colab CUDA / Apple Silicon Metal 实测入口
 - 面试材料：架构、POC、TCO/容量、实施计划、演示脚本、简历 bullet 和上游归属

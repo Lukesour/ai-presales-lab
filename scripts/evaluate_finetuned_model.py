@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from ai_presales_lab.compact_contract import validate_compact_solution_dict
 from ai_presales_lab.finetuning import load_conversations, sha256_file
 from ai_presales_lab.schemas import validate_solution_dict
 from ai_presales_lab.security import inspect_output, inspect_sensitive_data
@@ -27,6 +28,12 @@ def main() -> int:
     parser.add_argument("--adapter", type=Path, default=None)
     parser.add_argument("--split", type=Path, default=ROOT / "data/finetuning/test.jsonl")
     parser.add_argument("--limit", type=int, default=0)
+    parser.add_argument(
+        "--contract-profile",
+        choices=("full", "compact"),
+        default="full",
+        help="Schema used for scoring the model-facing output contract.",
+    )
     parser.add_argument(
         "--max-new-tokens",
         type=int,
@@ -207,6 +214,7 @@ def main() -> int:
             _score_completion(
                 row["id"],
                 completion,
+                contract_profile=args.contract_profile,
                 include_output_preview=args.include_output_previews,
                 preview_chars=args.preview_chars,
                 generation_truncated=(generated.shape[-1] - prompt_length)
@@ -231,6 +239,7 @@ def main() -> int:
             "include_output_previews": args.include_output_previews,
             "max_new_tokens": args.max_new_tokens,
             "json_prefill": args.json_prefill,
+            "contract_profile": args.contract_profile,
         },
     }
     if args.output:
@@ -317,6 +326,7 @@ def _score_completion(
     example_id: str,
     text: str,
     *,
+    contract_profile: str = "full",
     include_output_preview: bool = False,
     preview_chars: int = 800,
     generation_truncated: bool = False,
@@ -337,14 +347,18 @@ def _score_completion(
         return item
     item["json_parse"] = True
     try:
-        validate_solution_dict(payload, require_all_fields=True)
+        if contract_profile == "compact":
+            validate_compact_solution_dict(payload)
+        else:
+            validate_solution_dict(payload, require_all_fields=True)
         item["schema_pass"] = True
     except (TypeError, ValueError) as exc:
         item["error"] = str(exc)
     output_policy = inspect_output(text)
     sensitive_policy = inspect_sensitive_data(text)
     item["policy_pass"] = not output_policy.blocked and not sensitive_policy.blocked
-    item["evidence_count"] = len(payload.get("evidence", [])) if isinstance(payload, dict) else 0
+    evidence_field = "evidence_ids" if contract_profile == "compact" else "evidence"
+    item["evidence_count"] = len(payload.get(evidence_field, [])) if isinstance(payload, dict) else 0
     summary = payload.get("executive_summary", "") if isinstance(payload, dict) else ""
     item["conservative_no_evidence"] = (
         not item["evidence_count"] and isinstance(summary, str) and "资料不足" in summary

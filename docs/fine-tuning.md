@@ -24,7 +24,28 @@ make finetune-token-audit
 
 变体按源案例分组，不能把同一个案例的变体拆到不同 split，避免数据泄漏。每条 user message 同时包含请求标识、结构化客户约束和本次检索得到的证据片段；因此训练和评测是“RAG context → 结构化方案生成”，而不是让 adapter 记忆或猜测 held-out 案例的产品事实。`manifest.json` 保存文件 hash、生成器、prompt 版本、输入上下文版本和统计信息。输出中的 `run_id`、`trace_id`、运行时延迟和模型名会被剔除，避免把一次运行的偶然字段教给模型。
 
-assistant target 是紧凑 JSON：保留公开响应 schema、风险、POC、模型策略和引用字段，但压缩证据 excerpt 并移除运行时字段。数据检查脚本会在训练前验证每个 assistant target 可解析且满足 schema。
+默认的 `full` profile 使用紧凑 JSON，但仍要求模型一次生成完整的公开响应 schema。第一轮 T4 实验表明：0.5B 模型在只有几十条训练样本时容易生成可解析但不完整的对象，尤其漏掉 POC、模型策略和尾部审核字段。因此 notebook 默认使用 `compact` profile：模型只生成 `case_id`、摘要、建议、风险字符串、待确认问题、已召回的 `evidence_ids` 和审核状态；确定性的 Agent 继续负责 requirements、architecture、POC、model strategy 和 evidence 对象，再通过 schema/security gate 合并。这样把微调目标限制在稳定的决策行为和格式，把事实与长结构留在 RAG/Agent 层。
+
+可以显式构建 compact 数据集：
+
+```bash
+python scripts/build_finetune_dataset.py --target-profile compact
+python scripts/check_finetune_dataset.py
+```
+
+评估时使用相同的契约 profile：
+
+```bash
+PYTHONPATH=src python scripts/evaluate_finetuned_model.py \
+  --model Qwen/Qwen2.5-0.5B-Instruct \
+  --adapter .runtime/models/qwen2.5-0.5b-presales-compact-lora \
+  --contract-profile compact \
+  --max-new-tokens 2048 \
+  --json-prefill \
+  --output data/results/compact-qlora-test.json
+```
+
+`full` 实验仍然保留，不能把它的严格 schema 失败隐藏在 compact 指标中；两个 profile 代表不同的模型边界，必须分别报告。
 
 合成数据只用于工程演示；真实项目应使用获得授权且脱敏的历史售前问答，并由业务专家抽检事实、引用和风险标签。
 

@@ -7,6 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
+from ai_presales_lab.compact_contract import validate_compact_solution_dict
 from ai_presales_lab.finetuning import dataset_stats, load_conversations, sha256_file
 from ai_presales_lab.schemas import validate_solution_dict
 
@@ -17,6 +18,18 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--directory", type=Path, default=ROOT / "data/finetuning")
     args = parser.parse_args()
+
+    manifest = args.directory / "manifest.json"
+    if not manifest.exists():
+        print(f"Missing {manifest}; regenerate the dataset to keep hashes and stats traceable.")
+        return 2
+    manifest_payload = json.loads(manifest.read_text(encoding="utf-8"))
+    metadata = manifest_payload.get("metadata", {})
+    target_profile = metadata.get("target_profile", "full")
+    if target_profile not in {"full", "compact"}:
+        print(f"Unsupported target_profile in manifest: {target_profile!r}")
+        return 3
+
     rows: dict[str, object] = {}
     split_paths: dict[str, Path] = {}
     for split in ("train", "dev", "test"):
@@ -28,18 +41,14 @@ def main() -> int:
         rows[split] = dataset_stats(examples)
         split_paths[split] = path
         for example in examples:
-            _validate_training_contract(example, split)
-    manifest = args.directory / "manifest.json"
-    if not manifest.exists():
-        print(f"Missing {manifest}; regenerate the dataset to keep hashes and stats traceable.")
-        return 2
-    manifest_payload = json.loads(manifest.read_text(encoding="utf-8"))
-    metadata = manifest_payload.get("metadata", {})
-    if metadata.get("system_prompt_version") != "v2-json-contract-rag-context":
-        print(
-            "Manifest uses an outdated system prompt; regenerate the dataset with "
-            "scripts/build_finetune_dataset.py."
-        )
+            _validate_training_contract(example, split, target_profile)
+    expected_prompt_version = (
+        "v2-json-contract-rag-context"
+        if target_profile == "full"
+        else "v1-compact-decision-contract-rag-context"
+    )
+    if metadata.get("system_prompt_version") != expected_prompt_version:
+        print("Manifest uses an outdated system prompt; regenerate the dataset.")
         return 3
     if metadata.get("target_format") != "compact_json":
         print("Manifest target_format must be compact_json; regenerate the dataset.")
@@ -70,7 +79,9 @@ def main() -> int:
     return 0
 
 
-def _validate_training_contract(example: dict[str, object], split: str) -> None:
+def _validate_training_contract(
+    example: dict[str, object], split: str, target_profile: str = "full"
+) -> None:
     """Fail before training if targets or RAG context silently drift."""
 
     messages = example["messages"]
@@ -88,7 +99,10 @@ def _validate_training_contract(example: dict[str, object], split: str) -> None:
         target = json.loads(assistant_content)
     except json.JSONDecodeError as exc:
         raise ValueError(f"{split}/{example.get('id')}: assistant target is not JSON") from exc
-    validate_solution_dict(target, require_all_fields=True)
+    if target_profile == "compact":
+        validate_compact_solution_dict(target)
+    else:
+        validate_solution_dict(target, require_all_fields=True)
 
 
 if __name__ == "__main__":

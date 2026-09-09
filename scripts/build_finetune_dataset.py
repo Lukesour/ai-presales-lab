@@ -11,6 +11,11 @@ from pathlib import Path
 from typing import Any
 
 from ai_presales_lab.agent import PresalesAgent
+from ai_presales_lab.compact_contract import (
+    COMPACT_SYSTEM_PROMPT,
+    compact_target_from_payload,
+    validate_compact_solution_dict,
+)
 from ai_presales_lab.evaluation import load_cases
 from ai_presales_lab.finetuning import dataset_stats, validate_conversation, write_manifest
 from ai_presales_lab.knowledge import KnowledgeBase
@@ -27,6 +32,7 @@ SYSTEM_PROMPT = (
     "不要编造价格、SLA、准确率、认证或容量；资料不足时保持保守。"
 )
 SYSTEM_PROMPT_VERSION = "v2-json-contract-rag-context"
+COMPACT_SYSTEM_PROMPT_VERSION = "v1-compact-decision-contract-rag-context"
 
 # Keep the target complete enough to exercise the public response contract,
 # while removing runtime-only fields and avoiding pretty-printed whitespace.
@@ -53,12 +59,22 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=ROOT / "data/finetuning")
     parser.add_argument("--variants", type=int, default=3, choices=(1, 2, 3))
+    parser.add_argument(
+        "--target-profile",
+        choices=("full", "compact"),
+        default="full",
+        help=(
+            "full regenerates the public response contract; compact trains only the "
+            "small model-facing decision contract and lets the deterministic Agent "
+            "own the long POC/model-strategy fields."
+        ),
+    )
     args = parser.parse_args()
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
     cases = load_cases(ROOT / "data/evaluation/cases.jsonl")
-    examples = _build_examples(cases, args.variants)
+    examples = _build_examples(cases, args.variants, args.target_profile)
     for item in examples:
         validate_conversation(item)
 
@@ -103,9 +119,14 @@ def main() -> int:
         files=files,
         metadata={
             "generator": "scripts/build_finetune_dataset.py",
-            "system_prompt_version": SYSTEM_PROMPT_VERSION,
+            "system_prompt_version": (
+                SYSTEM_PROMPT_VERSION
+                if args.target_profile == "full"
+                else COMPACT_SYSTEM_PROMPT_VERSION
+            ),
             "input_context_version": "v1-structured-brief-and-retrieved-evidence",
             "target_format": "compact_json",
+            "target_profile": args.target_profile,
             "variants": args.variants,
             "source_cases": len(cases),
             "split_policy": "deterministic case-level split: test/dev/train",
@@ -116,9 +137,10 @@ def main() -> int:
     return 0
 
 
-def _build_examples(cases: list[Any], variants: int) -> list[dict[str, Any]]:
+def _build_examples(cases: list[Any], variants: int, target_profile: str) -> list[dict[str, Any]]:
     examples: list[dict[str, Any]] = []
     knowledge_base = KnowledgeBase(ROOT / "data/knowledge")
+    system_prompt = SYSTEM_PROMPT if target_profile == "full" else COMPACT_SYSTEM_PROMPT
     for case in cases:
         with CheckpointStore(":memory:") as store:
             state = PresalesAgent(knowledge_base, store).run(
@@ -126,8 +148,14 @@ def _build_examples(cases: list[Any], variants: int) -> list[dict[str, Any]]:
             )
             if state.response is None:
                 raise RuntimeError(f"Agent did not produce a response for {case.case_id}")
-            target = _training_target(state.response.to_dict())
-            validate_solution_dict(target, require_all_fields=True)
+            if target_profile == "full":
+                target = _training_target(state.response.to_dict())
+                validate_solution_dict(target, require_all_fields=True)
+            elif target_profile == "compact":
+                target = compact_target_from_payload(state.response.to_dict())
+                validate_compact_solution_dict(target)
+            else:  # pragma: no cover - argparse constrains this value
+                raise ValueError(f"unsupported target profile: {target_profile}")
             answer = json.dumps(
                 target,
                 ensure_ascii=False,
@@ -144,7 +172,7 @@ def _build_examples(cases: list[Any], variants: int) -> list[dict[str, Any]]:
                 {
                     "id": f"{case.case_id}-v{index}",
                     "messages": [
-                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "system", "content": system_prompt},
                         {"role": "user", "content": prompt},
                         {"role": "assistant", "content": answer},
                     ],
